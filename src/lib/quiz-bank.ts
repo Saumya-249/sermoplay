@@ -1,3 +1,4 @@
+import { synthesizeQuestions } from "./academic-matrix";
 export type BankQuestion = {
   prompt_en: string;
   prompt_hi: string;

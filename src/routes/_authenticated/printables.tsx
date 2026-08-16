@@ -11,16 +11,16 @@ import { useApp } from "@/lib/app-context";
 export const Route = createFileRoute("/_authenticated/printables")({
   head: () => ({
     meta: [
-      { title: "Printable Hub | Regional-Language Game Library" },
+      { title: "Printable Hub | Sermo Play" },
       {
         name: "description",
         content:
           "Print or save clean black-and-white classroom worksheets from any generated quiz, in English or Hindi.",
       },
-      { property: "og:title", content: "Printable Hub | Regional-Language Game Library" },
+      { property: "og:title", content: "Printable Hub | Sermo Play" },
       {
         property: "og:description",
-        content: "Game-to-worksheet printables for low-device classrooms.",
+        content: "Print or save clean black-and-white classroom worksheets from any generated quiz, in English or Hindi.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

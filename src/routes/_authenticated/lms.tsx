@@ -22,16 +22,16 @@ import { ArrowLeft, ArrowRight, RotateCw, BookOpen, WifiOff } from "lucide-react
 export const Route = createFileRoute("/_authenticated/lms")({
   head: () => ({
     meta: [
-      { title: "Offline LMS & Flashcard Hub | Regional-Language Game Library" },
+      { title: "Offline LMS & Flashcard Hub | Sermo Play" },
       {
         name: "description",
         content:
           "Offline study summaries and flip-card decks for Math, Science and Social Science in English and Hindi, Class 1 to 5.",
       },
-      { property: "og:title", content: "Offline LMS & Flashcard Hub" },
+      { property: "og:title", content: "Offline LMS & Flashcard Hub | Sermo Play" },
       {
         property: "og:description",
-        content: "Bilingual lesson summaries and gamified flashcard decks that work with zero network.",
+        content: "Offline study summaries and flip-card decks for Math, Science and Social Science in English and Hindi, Class 1 to 5.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

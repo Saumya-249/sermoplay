@@ -17,13 +17,13 @@ import { ArrowLeft, Check, X, Trophy, Sparkles, RotateCcw, HardDriveDownload } f
 export const Route = createFileRoute("/_authenticated/quiz/$id")({
   head: () => ({
     meta: [
-      { title: "Quiz Player | Regional-Language Game Library" },
+      { title: "Quiz Player | Sermo Play" },
       {
         name: "description",
         content: "Play step-by-step classroom quizzes in Hindi or English with instant feedback and offline score saving.",
       },
-      { property: "og:title", content: "Quiz Player | Regional-Language Game Library" },
-      { property: "og:description", content: "A gamified bilingual quiz player for classrooms with offline results." },
+      { property: "og:title", content: "Quiz Player | Sermo Play" },
+      { property: "og:description", content: "Play step-by-step classroom quizzes in Hindi or English with instant feedback and offline score saving." },
     ],
   }),
   component: QuizPlayer,

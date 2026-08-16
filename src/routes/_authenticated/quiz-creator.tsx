@@ -26,13 +26,13 @@ import { generateLiveQuiz } from "@/lib/live-quiz.functions";
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
   head: () => ({
     meta: [
-      { title: "Quiz Creator | Regional-Language Game Library" },
+      { title: "Quiz Creator | Sermo Play" },
       {
         name: "description",
         content: "Teachers build regional-language quizzes with multiple-choice questions, saved online or queued offline.",
       },
-      { property: "og:title", content: "Quiz Creator | Regional-Language Game Library" },
-      { property: "og:description", content: "Create classroom quizzes in Indian regional languages in minutes." },
+      { property: "og:title", content: "Quiz Creator | Sermo Play" },
+      { property: "og:description", content: "Teachers build regional-language quizzes with multiple-choice questions, saved online or queued offline." },
     ],
   }),
   component: QuizCreator,

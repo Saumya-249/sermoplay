@@ -27,13 +27,13 @@ import { cacheLibrarySection, cachedQuizzes } from "@/lib/offline-library";
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({
     meta: [
-      { title: "Game Library | Regional-Language Game Library" },
+      { title: "Game Library | Sermo Play" },
       {
         name: "description",
         content: "Filter classroom games by language, subject and class, then download them for offline teaching.",
       },
-      { property: "og:title", content: "Game Library | Regional-Language Game Library" },
-      { property: "og:description", content: "Browse and filter regional-language educational games." },
+      { property: "og:title", content: "Game Library | Sermo Play" },
+      { property: "og:description", content: "Filter classroom games by language, subject and class, then download them for offline teaching." },
     ],
   }),
   component: LibraryPage,

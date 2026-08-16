@@ -222,6 +222,58 @@ function QuizCreator() {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
+        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full text-left">
+                <CardHeader className="flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Plug className="size-4" /> 🔌 AI Core Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      {apiKey ? "API key saved on this device" : "Add your AI API key to generate live questions"}
+                    </CardDescription>
+                  </div>
+                  <ChevronDown
+                    className={`size-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                  />
+                </CardHeader>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="ai-key">AI API Key</Label>
+                  <Input
+                    id="ai-key"
+                    type="password"
+                    autoComplete="off"
+                    placeholder="Paste your provider API key"
+                    value={apiKey}
+                    onChange={(e) => updateApiKey(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Provider</Label>
+                  <Select value={provider} onValueChange={(v) => updateProvider(v as AIProvider)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gemini">Google Gemini</SelectItem>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  The key is stored only in this browser's local storage and is sent directly to the provider.
+                </p>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
         <Card>
           <CardHeader>
             <CardTitle>Create a quiz</CardTitle>
@@ -299,6 +351,14 @@ function QuizCreator() {
                 {isRegenerating ? "🔄 Regenerating fresh set..." : "🔄 Regenerate Questions"}
               </Button>
             </div>
+            {busy && (
+              <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/40 p-4">
+                <Loader2 className="size-5 animate-spin text-primary" />
+                <p className="text-sm font-medium">
+                  Trained AI is synthesizing dynamic regional-language questions...
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

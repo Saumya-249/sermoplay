@@ -105,7 +105,7 @@ async function handleIsolatedPrint(quiz: PrintableQuiz) {
         <div class="subheader">Regional-Language Game Library</div>
 
         <div style="float: right; text-align: center; margin-top: -50px;">
-          <img id="print-qr-code" src="https://qrserver.com${encodeURIComponent(window.location.origin + '/play/' + quiz.id)}" alt="QR Code" style="width: 100px; height: 100px;" />
+          <img src="https://qrserver.com${encodeURIComponent(window.location.origin + '/play/' + quiz.id)}" alt="QR Code" style="width: 100px; height: 100px;" />
           <div style="font-size: 10px; margin-top: 4px; color: #555; max-width: 100px;">Scan to play digital version offline</div>
         </div>
         <div style="clear: both;"></div>
@@ -147,26 +147,11 @@ async function handleIsolatedPrint(quiz: PrintableQuiz) {
   `);
 
   printWindow.document.close();
-
-  const qrImage = printWindow.document.getElementById("print-qr-code") as HTMLImageElement | null;
-
-  if (qrImage) {
-    qrImage.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    };
-
-    if (qrImage.complete) {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }
-  } else {
-    printWindow.focus();
+  printWindow.focus();
+  setTimeout(() => {
     printWindow.print();
     printWindow.close();
-  }
+  }, 500);
 }
 
 function Printables() {

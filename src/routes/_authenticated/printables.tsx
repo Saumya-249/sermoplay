@@ -135,7 +135,6 @@ function Printables() {
 
       <Dialog open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <DialogContent
-          showCloseButton={false}
           className="max-h-[92vh] max-w-4xl overflow-y-auto bg-muted p-0"
         >
           <DialogTitle className="sr-only">Worksheet preview</DialogTitle>

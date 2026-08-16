@@ -166,12 +166,8 @@
 }
 
 @media print {
-  @page {
-    margin: 1.5cm 1.5cm 1.5cm 1.5cm;
-  }
-
-  /* === RESET ROOT LAYOUT: strip flex/centering/transform/height locks === */
-  html, body, #root, [data-radix-portal], .fixed, .inset-0 {
+  /* 1. Global Reset: Hide every single element in the viewport by default */
+  html, body, #root, [data-radix-portal], div {
     display: block !important;
     position: static !important;
     transform: none !important;
@@ -179,89 +175,54 @@
     padding: 0 !important;
     height: auto !important;
     min-height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    overflow-x: visible !important;
-    overflow-y: visible !important;
+    background: none !important;
   }
 
-  body,
-  body * {
-    visibility: hidden !important;
+  /* 2. Page Box Configuration: Force standard A4 layout metrics with a 1cm border safety area */
+  @page {
+    size: A4 portrait;
+    margin: 1cm !important;
   }
 
-  /* === WORKSHEET PAPER CONTAINER: align flush with top-left margin boundaries === */
-  .worksheet-print-container,
-  .worksheet-print-container * {
-    visibility: visible !important;
-  }
-
-  .worksheet-print-container {
-    display: block !important;
-    position: relative !important;
-    top: 0 !important;
-    left: 0 !important;
-    margin-top: 0 !important;
-    margin-left: 0 !important;
-    padding-top: 0 !important;
-    padding-left: 0 !important;
-    width: 100% !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
-    font-size: 12pt !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    overflow-x: visible !important;
-    overflow-y: visible !important;
-  }
-
-  .worksheet-question-item {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    page-break-before: auto !important;
-    page-break-after: auto !important;
-  }
-
-  [data-slot="dialog-content"],
-  [data-slot="dialog-overlay"] {
-    position: static !important;
-    max-height: none !important;
-    overflow: visible !important;
-    transform: none !important;
-    background: #fff !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
-  }
-
-  /* Remove any shell / app chrome that could cause blank leading pages */
-  .no-print,
-  .no-print * {
+  /* 3. Hide Unnecessary UI: Strip away structural background app layers, sidebars, buttons, or dialog curtains */
+  body > *:not(.worksheet-print-container),
+  .fixed, .absolute, button, nav, sidebar, [role="dialog"]:not(.worksheet-print-container) {
     display: none !important;
     visibility: hidden !important;
   }
 
-  /* Clear common Tailwind overflow/height utilities that block page flow */
-  .h-screen,
-  .h-full,
-  .max-h-screen,
-  .max-h-full,
-  .min-h-screen,
-  .min-h-full,
-  .overflow-hidden,
-  .overflow-y-auto,
-  .overflow-x-auto,
-  .overflow-scroll,
-  .overflow-auto {
-    height: auto !important;
-    max-height: none !important;
-    min-height: auto !important;
-    overflow: visible !important;
+  /* 4. Isolated Document Container Style: Snap the print view back to the top-left boundary */
+  .worksheet-print-container {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* 5. Force Element Visibility: Ensure text strings, checkboxes, and layout blocks within your print wrapper render clearly */
+  .worksheet-print-container * {
+    visibility: visible !important;
+    display: inline-block;
+  }
+  
+  /* 6. Block Layout Fixes: Separate headings, rows, and structural text boxes explicitly */
+  .worksheet-print-container div, 
+  .worksheet-print-container h1, 
+  .worksheet-print-container h2, 
+  .worksheet-print-container p {
+    display: block !important;
+  }
+
+  /* 7. Avoid Mid-Question Fractures: Block individual question paragraphs from breaking across split pages mid-sentence */
+  .worksheet-question-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 1.5rem !important;
   }
 }

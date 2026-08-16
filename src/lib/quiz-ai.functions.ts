@@ -24,6 +24,10 @@ export const generateQuiz = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ questions: GeneratedQuestion[]; simulated: boolean }> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     const variantNote = data.set > 0 ? ` This is alternative set ${data.set}; generate a different set of questions from any previous version.` : "";
+    // English/Hindi are served by the deterministic Academic Question Synthesis Matrix.
+    if (data.language === "English" || data.language === "Hindi") {
+      return { questions: buildQuestions(data), simulated: false };
+    }
     if (!apiKey) return { questions: buildQuestions(data), simulated: true };
 
     try {

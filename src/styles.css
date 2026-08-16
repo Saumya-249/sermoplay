@@ -166,11 +166,20 @@
 }
 
 @media print {
-  /* === RESET: strip viewport constraints, scrollbars, and overflow locks === */
-  html, body {
+  @page {
+    margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+  }
+
+  /* === RESET ROOT LAYOUT: strip flex/centering/transform/height locks === */
+  html, body, #root, [data-radix-portal], .fixed, .inset-0 {
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
     height: auto !important;
-    max-height: none !important;
     min-height: auto !important;
+    max-height: none !important;
     overflow: visible !important;
     overflow-x: visible !important;
     overflow-y: visible !important;
@@ -181,21 +190,24 @@
     visibility: hidden !important;
   }
 
-  /* === WORKSHEET PAPER CONTAINER: absolute top-left, full width, no chrome === */
+  /* === WORKSHEET PAPER CONTAINER: align flush with top-left margin boundaries === */
   .worksheet-print-container,
   .worksheet-print-container * {
     visibility: visible !important;
   }
 
   .worksheet-print-container {
-    position: absolute !important;
-    left: 0 !important;
+    display: block !important;
+    position: relative !important;
     top: 0 !important;
+    left: 0 !important;
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+    padding-left: 0 !important;
     width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
     box-shadow: none !important;
+    border: 0 !important;
     background: #fff !important;
     color: #000 !important;
     font-size: 12pt !important;
@@ -251,10 +263,5 @@
     max-height: none !important;
     min-height: auto !important;
     overflow: visible !important;
-  }
-
-  @page {
-    size: A4;
-    margin: 14mm;
   }
 }

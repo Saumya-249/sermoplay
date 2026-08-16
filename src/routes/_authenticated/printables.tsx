@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,7 +89,18 @@ function Printables() {
   const previewUrl = (id: string) =>
     typeof window === "undefined" ? `/quiz/${id}` : `${window.location.origin}/quiz/${id}`;
 
+  const dedicatedPrintView =
+    active && typeof document !== "undefined"
+      ? createPortal(
+          <div id="dedicated-worksheet-print-view" className="hidden" aria-hidden="true">
+            <Worksheet quiz={active} url={previewUrl(active.id)} />
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
+    <>
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold">Printable hub</h1>
@@ -161,5 +173,7 @@ function Printables() {
         </DialogContent>
       </Dialog>
     </div>
+    {dedicatedPrintView}
+    </>
   );
 }

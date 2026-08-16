@@ -17,6 +17,7 @@ import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPrintablesRouteImport } from './routes/_authenticated/printables'
 import { Route as AuthenticatedQuizCreatorRouteImport } from './routes/_authenticated/quiz-creator'
 import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated/sync'
+import { Route as AuthenticatedQuizIdRouteImport } from './routes/_authenticated/quiz.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const AuthenticatedSyncRoute = AuthenticatedSyncRouteImport.update({
   path: '/sync',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedQuizIdRoute = AuthenticatedQuizIdRouteImport.update({
+  id: '/quiz/$id',
+  path: '/quiz/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/printables': typeof AuthenticatedPrintablesRoute
   '/quiz-creator': typeof AuthenticatedQuizCreatorRoute
   '/sync': typeof AuthenticatedSyncRoute
+  '/quiz/$id': typeof AuthenticatedQuizIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/printables': typeof AuthenticatedPrintablesRoute
   '/quiz-creator': typeof AuthenticatedQuizCreatorRoute
   '/sync': typeof AuthenticatedSyncRoute
+  '/quiz/$id': typeof AuthenticatedQuizIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/printables': typeof AuthenticatedPrintablesRoute
   '/_authenticated/quiz-creator': typeof AuthenticatedQuizCreatorRoute
   '/_authenticated/sync': typeof AuthenticatedSyncRoute
+  '/_authenticated/quiz/$id': typeof AuthenticatedQuizIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/printables'
     | '/quiz-creator'
     | '/sync'
+    | '/quiz/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/printables'
     | '/quiz-creator'
     | '/sync'
+    | '/quiz/$id'
   id:
     | '__root__'
     | '/'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/_authenticated/printables'
     | '/_authenticated/quiz-creator'
     | '/_authenticated/sync'
+    | '/_authenticated/quiz/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -183,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSyncRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/quiz/$id': {
+      id: '/_authenticated/quiz/$id'
+      path: '/quiz/$id'
+      fullPath: '/quiz/$id'
+      preLoaderRoute: typeof AuthenticatedQuizIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -192,6 +211,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPrintablesRoute: typeof AuthenticatedPrintablesRoute
   AuthenticatedQuizCreatorRoute: typeof AuthenticatedQuizCreatorRoute
   AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
+  AuthenticatedQuizIdRoute: typeof AuthenticatedQuizIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -200,6 +220,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPrintablesRoute: AuthenticatedPrintablesRoute,
   AuthenticatedQuizCreatorRoute: AuthenticatedQuizCreatorRoute,
   AuthenticatedSyncRoute: AuthenticatedSyncRoute,
+  AuthenticatedQuizIdRoute: AuthenticatedQuizIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

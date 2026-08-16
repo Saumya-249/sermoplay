@@ -1,0 +1,16 @@
+INSERT INTO public.quizzes (title, language, subject, class_level, topic, difficulty, duration_min, is_published, created_by, questions) VALUES
+('Counting & Numbers / गिनती और संख्याएँ','Hindi','Maths','Class 3','Numbers','Easy',8,true,'00000000-0000-0000-0000-000000000001',
+ '[{"prompt_en":"What comes after 19?","prompt_hi":"19 के बाद कौन सी संख्या आती है?","options_en":["18","20","21","29"],"options_hi":["18","20","21","29"],"answer":1},
+   {"prompt_en":"How much is 7 + 6?","prompt_hi":"7 + 6 कितना होता है?","options_en":["12","13","14","15"],"options_hi":["12","13","14","15"],"answer":1},
+   {"prompt_en":"Which number is the largest?","prompt_hi":"कौन सी संख्या सबसे बड़ी है?","options_en":["45","54","39","51"],"options_hi":["45","54","39","51"],"answer":1},
+   {"prompt_en":"How many tens are in 80?","prompt_hi":"80 में कितने दहाई हैं?","options_en":["8","80","18","0"],"options_hi":["8","80","18","0"],"answer":0}]'::jsonb),
+('Our Body & Nature / हमारा शरीर और प्रकृति','Hindi','Science','Class 4','Human body','Easy',10,true,'00000000-0000-0000-0000-000000000001',
+ '[{"prompt_en":"Which organ pumps blood?","prompt_hi":"कौन सा अंग रक्त पंप करता है?","options_en":["Lungs","Heart","Liver","Brain"],"options_hi":["फेफड़े","हृदय","यकृत","मस्तिष्क"],"answer":1},
+   {"prompt_en":"Plants make food using...","prompt_hi":"पौधे भोजन बनाते हैं...","options_en":["Moonlight","Sunlight","Wind","Soil only"],"options_hi":["चाँदनी से","सूर्य के प्रकाश से","हवा से","केवल मिट्टी से"],"answer":1},
+   {"prompt_en":"Water freezes at?","prompt_hi":"पानी किस तापमान पर जमता है?","options_en":["0°C","50°C","100°C","25°C"],"options_hi":["0°C","50°C","100°C","25°C"],"answer":0},
+   {"prompt_en":"Which one is a mammal?","prompt_hi":"इनमें से स्तनधारी कौन है?","options_en":["Snake","Cow","Frog","Crow"],"options_hi":["साँप","गाय","मेंढक","कौआ"],"answer":1}]'::jsonb),
+('Words & Grammar / शब्द और व्याकरण','Hindi','Language','Class 5','Grammar','Medium',10,true,'00000000-0000-0000-0000-000000000001',
+ '[{"prompt_en":"Which word is a noun?","prompt_hi":"इनमें से संज्ञा कौन सा शब्द है?","options_en":["Run","Village","Quickly","Beautiful"],"options_hi":["दौड़ना","गाँव","तेज़ी से","सुंदर"],"answer":1},
+   {"prompt_en":"Opposite of day?","prompt_hi":"दिन का विलोम शब्द क्या है?","options_en":["Morning","Night","Noon","Light"],"options_hi":["सुबह","रात","दोपहर","प्रकाश"],"answer":1},
+   {"prompt_en":"Plural of child?","prompt_hi":"बच्चा का बहुवचन क्या है?","options_en":["Childs","Children","Childes","Child"],"options_hi":["बच्चा","बच्चे","बच्चों का","बच्ची"],"answer":1},
+   {"prompt_en":"Which is a question word?","prompt_hi":"इनमें प्रश्नवाचक शब्द कौन सा है?","options_en":["And","Why","Because","Very"],"options_hi":["और","क्यों","क्योंकि","बहुत"],"answer":1}]'::jsonb);

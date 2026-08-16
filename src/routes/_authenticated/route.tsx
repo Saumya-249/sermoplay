@@ -115,7 +115,8 @@ function Shell() {
         <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger />
           <h2 className="text-base font-semibold">
-            {NAV.find((n) => n.to === pathname)?.label ?? "Dashboard"}
+            {NAV.find((n) => n.to === pathname)?.label ??
+              (pathname.startsWith("/quiz/") ? "Quiz Player" : "Dashboard")}
           </h2>
           <div className="ml-auto flex items-center gap-2">
             <Badge variant={online ? "default" : "secondary"} className="gap-1">

@@ -44,6 +44,8 @@ type Question = {
   answer: number;
   prompt_hi?: string;
   options_hi?: string[];
+  prompt_en?: string;
+  options_en?: string[];
 };
 
 const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], answer: 0 });
@@ -90,8 +92,8 @@ function QuizCreator() {
           prompt: q.prompt,
           options: q.options,
           answer: q.answer,
-          prompt_en: q.prompt,
-          options_en: q.options,
+          prompt_en: q.prompt_en ?? q.prompt,
+          options_en: q.options_en ?? q.options,
           prompt_hi: q.prompt_hi ?? q.prompt,
           options_hi: q.options_hi ?? q.options,
         })),
@@ -146,6 +148,8 @@ function QuizCreator() {
             answer: q.answer ?? 0,
             prompt_hi: q.prompt_hi ?? localPrompt,
             options_hi: q.options_hi ?? localOptions,
+            prompt_en: q.prompt_en,
+            options_en: q.options_en,
           };
         }),
       );

@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
+import { WORKING_GAME_LIBRARY } from "@/lib/working-games";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
-import { Download, HardDrive, CloudUpload, Gamepad2, Check } from "lucide-react";
+import { HardDrive, CloudUpload, Gamepad2, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -26,25 +26,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { userId, online } = useApp();
-  const qc = useQueryClient();
-
-  const games = useQuery({
-    queryKey: ["games"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("*").order("created_at");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const downloads = useQuery({
-    queryKey: ["downloads", userId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("downloads").select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const games = WORKING_GAME_LIBRARY;
 
   const pending = useQuery({
     queryKey: ["sync_queue", userId],
@@ -55,25 +37,8 @@ function Dashboard() {
     },
   });
 
-  const download = useMutation({
-    mutationFn: async (gameId: string) => {
-      if (!online) throw new Error("You are offline — connect to download new games.");
-      const { error } = await supabase
-        .from("downloads")
-        .insert({ user_id: userId!, game_id: gameId, status: "downloaded", progress: 100 });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Game downloaded for offline use");
-      qc.invalidateQueries({ queryKey: ["downloads"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const downloadedIds = new Set((downloads.data ?? []).map((d) => d.game_id));
-  const storageUsed = (games.data ?? [])
-    .filter((g) => downloadedIds.has(g.id))
-    .reduce((sum, g) => sum + Number(g.size_mb), 0);
+  const totalQuestions = games.reduce((sum, g) => sum + g.questions.length, 0);
+  const storageUsed = Math.round(totalQuestions * 0.02 * 10) / 10;
   const quota = 128;
 
   return (
@@ -86,8 +51,8 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={<Gamepad2 className="size-4" />} label="Games in library" value={String(games.data?.length ?? 0)} />
-        <Stat icon={<Download className="size-4" />} label="Downloaded offline" value={String(downloadedIds.size)} />
+        <Stat icon={<Gamepad2 className="size-4" />} label="Total games available" value={String(games.length)} />
+        <Stat icon={<Play className="size-4" />} label="Playable questions" value={String(totalQuestions)} />
         <Stat
           icon={<HardDrive className="size-4" />}
           label="Local storage used"
@@ -103,36 +68,29 @@ function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Available for download</CardTitle>
-            <CardDescription>Regional-language games ready to store on this device.</CardDescription>
+            <CardTitle>Ready to play offline</CardTitle>
+            <CardDescription>Every game is bundled on this device — tap play to start instantly.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(games.data ?? []).slice(0, 6).map((g) => {
-              const done = downloadedIds.has(g.id);
-              return (
+            {games.slice(0, 6).map((g) => (
                 <div
                   key={g.id}
                   className="flex items-center gap-3 rounded-lg border bg-card p-3"
                 >
-                  <span className="text-2xl">{g.cover_emoji}</span>
+                  <span className="text-2xl">{g.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{g.title}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {g.language} · {g.subject} · {g.class_level} · {Number(g.size_mb).toFixed(1)} MB
+                      {g.language} · {g.subject} · {g.classLevel} · {g.questions.length} questions
                     </p>
                   </div>
-                  {done ? (
-                    <Badge variant="secondary" className="gap-1">
-                      <Check className="size-3" /> Offline
-                    </Badge>
-                  ) : (
-                    <Button size="sm" onClick={() => download.mutate(g.id)} disabled={download.isPending}>
-                      <Download className="size-4" /> Download
-                    </Button>
-                  )}
+                  <Button size="sm" asChild>
+                    <Link to="/quiz/$id" params={{ id: g.id }}>
+                      <Play className="size-4" /> Play
+                    </Link>
+                  </Button>
                 </div>
-              );
-            })}
+            ))}
             <Button asChild variant="outline" className="w-full">
               <Link to="/library">Browse full library</Link>
             </Button>

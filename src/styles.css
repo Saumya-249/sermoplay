@@ -166,41 +166,46 @@
 }
 
 @media print {
-  /* Hide the root app framework completely from the viewport stream */
-  #root, header, nav, sidebar, footer, button, .no-print {
+  /* Hide the entire interactive application root and all portal overlays completely */
+  #root, [data-radix-portal], [role="dialog"], button, header, nav, .no-print {
     display: none !important;
+    opacity: 0 !important;
   }
 
-  /* Force the target container block to explicitly reveal itself and take full page dimensions */
-  body, .worksheet-print-container {
+  /* Force the dedicated view container to explicitly stream flat over the viewport area */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
     display: block !important;
-    visibility: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  #dedicated-worksheet-print-view {
+    display: block !important;
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    height: auto !important;
-    background: white !important;
-    color: black !important;
     margin: 0 !important;
+    padding: 1.5cm !important;
+    background: transparent !important;
+  }
+
+  /* Structural print distribution block layouts */
+  #dedicated-worksheet-print-view div,
+  #dedicated-worksheet-print-view p,
+  #dedicated-worksheet-print-view h1,
+  #dedicated-worksheet-print-view h2 {
+    display: block !important;
+    position: static !important;
+    margin: 0 0 0.5rem 0 !important;
     padding: 0 !important;
   }
 
-  /* Ensure all child text fragments, inputs, and graphics render clearly */
-  .worksheet-print-container * {
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  /* Force regular block distributions for text paragraphs and grid elements */
-  .worksheet-print-container div,
-  .worksheet-print-container p,
-  .worksheet-print-container h1,
-  .worksheet-print-container h2 {
-    display: block !important;
-  }
-
-  /* Prevent question rows from breaking across page breaks mid-sentence */
+  /* Maintain clean text alignment layout for question items and checkbox lines */
   .worksheet-question-item {
     page-break-inside: avoid !important;
     break-inside: avoid !important;

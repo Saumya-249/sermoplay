@@ -78,15 +78,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Regional-Language Game Library" },
+      { title: "Sermo Play" },
       {
         name: "description",
-        content: "Offline-first regional-language educational games and worksheets for Indian classrooms.",
+        content: "Offline-first library of regional-language educational games, quizzes and printable worksheets for teachers in low-connectivity schools.",
       },
-      { property: "og:title", content: "Regional-Language Game Library" },
+      { property: "og:title", content: "Sermo Play" },
       {
         property: "og:description",
-        content: "Offline-first regional-language educational games and worksheets for Indian classrooms.",
+        content: "Offline-first library of regional-language educational games, quizzes and printable worksheets for teachers in low-connectivity schools.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

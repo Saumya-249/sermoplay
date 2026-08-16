@@ -11,13 +11,13 @@ import { HardDrive, CloudUpload, Gamepad2, Play } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard | Regional-Language Game Library" },
+      { title: "Dashboard | Sermo Play" },
       {
         name: "description",
         content: "Download classroom games, track offline storage and monitor pending cloud sync.",
       },
-      { property: "og:title", content: "Teacher Dashboard | Regional-Language Game Library" },
-      { property: "og:description", content: "Downloads, offline storage and sync status in one place." },
+      { property: "og:title", content: "Teacher Dashboard | Sermo Play" },
+      { property: "og:description", content: "Download classroom games, track offline storage and monitor pending cloud sync." },
     ],
   }),
   component: Dashboard,

@@ -7,16 +7,16 @@ import { Download, Library, FilePlus2, Printer, RefreshCw } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Regional-Language Game Library for Indian Classrooms" },
+      { title: "Sermo Play for Indian Classrooms" },
       {
         name: "description",
         content:
           "Offline-first library of regional-language educational games, quizzes and printable worksheets for teachers in low-connectivity schools.",
       },
-      { property: "og:title", content: "Regional-Language Game Library" },
+      { property: "og:title", content: "Sermo Play" },
       {
         property: "og:description",
-        content: "Download once, teach offline, sync when the internet returns.",
+        content: "Offline-first library of regional-language educational games, quizzes and printable worksheets for teachers in low-connectivity schools.",
       },
     ],
   }),

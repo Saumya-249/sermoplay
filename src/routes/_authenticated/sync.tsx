@@ -15,13 +15,13 @@ import { removePendingQuiz } from "@/lib/pending-sync";
 export const Route = createFileRoute("/_authenticated/sync")({
   head: () => ({
     meta: [
-      { title: "Sync Panel | Regional-Language Game Library" },
+      { title: "Sync Panel | Sermo Play" },
       {
         name: "description",
         content: "Simulate offline mode, inspect the local data queue and push queued classroom records to the cloud.",
       },
-      { property: "og:title", content: "Sync Panel | Regional-Language Game Library" },
-      { property: "og:description", content: "Offline queueing and cloud synchronisation for classroom records." },
+      { property: "og:title", content: "Sync Panel | Sermo Play" },
+      { property: "og:description", content: "Simulate offline mode, inspect the local data queue and push queued classroom records to the cloud." },
     ],
   }),
   component: SyncPanel,

@@ -12,16 +12,16 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Teacher Sign In | Regional-Language Game Library" },
+      { title: "Teacher Sign In | Sermo Play" },
       {
         name: "description",
         content:
           "Sign in to download regional-language classroom games, build quizzes and sync offline classroom records.",
       },
-      { property: "og:title", content: "Teacher Sign In | Regional-Language Game Library" },
+      { property: "og:title", content: "Teacher Sign In | Sermo Play" },
       {
         property: "og:description",
-        content: "Access your offline-first classroom game library for Indian regional languages.",
+        content: "Sign in to download regional-language classroom games, build quizzes and sync offline classroom records.",
       },
     ],
   }),

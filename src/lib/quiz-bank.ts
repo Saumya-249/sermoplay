@@ -339,7 +339,6 @@ export function buildQuestions(args: {
 }): BankQuestion[] {
   const seeds =
     BANK[`${args.language}|${args.subject}`] ??
-    BANK[`Hindi|${args.subject}`] ??
     genericSeeds(args.subject, args.classLevel, args.language, args.topic);
   return seeds.slice(0, 5).map(shuffleOptions);
 }

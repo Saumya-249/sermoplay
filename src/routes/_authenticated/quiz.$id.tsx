@@ -125,7 +125,7 @@ function QuizPlayer() {
   const pick = (i: number) => {
     if (picked !== null) return;
     setPicked(i);
-    const ok = i === q.answer;
+    const ok = i === q!.answer;
     setAnswers((a) => {
       const next = [...a];
       next[step] = ok;
@@ -224,7 +224,7 @@ function QuizPlayer() {
 
             <div className="grid gap-3">
               {options.map((opt, i) => {
-                const isAnswer = i === q.answer;
+                const isAnswer = i === q!.answer;
                 const chosen = picked === i;
                 return (
                   <button
@@ -253,7 +253,7 @@ function QuizPlayer() {
             {picked !== null && (
               <div className="flex flex-wrap items-center gap-3 rounded-xl bg-muted/60 p-4">
                 <p className="text-sm font-medium">
-                  {picked === q.answer ? `🎉 ${t.correct}` : `${t.wrong} — ${t.answerIs}: ${options[q.answer]}`}
+                  {picked === q!.answer ? `🎉 ${t.correct}` : `${t.wrong} — ${t.answerIs}: ${options[q!.answer]}`}
                 </p>
                 <Button className="ml-auto" onClick={advance}>
                   {step + 1 < total ? t.next : t.finish}

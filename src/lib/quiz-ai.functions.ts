@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { buildQuestions } from "./quiz-bank";
 
 const input = z.object({
   topic: z.string().min(1),
@@ -17,21 +18,11 @@ export type GeneratedQuestion = {
   answer: number;
 };
 
-function simulate(topic: string, classLevel: string): GeneratedQuestion[] {
-  return Array.from({ length: 5 }, (_, i) => ({
-    prompt_en: `${classLevel}: Question ${i + 1} about ${topic}?`,
-    prompt_hi: `${classLevel}: ${topic} पर प्रश्न ${i + 1}?`,
-    options_en: ["Option A", "Option B", "Option C", "Option D"],
-    options_hi: ["विकल्प क", "विकल्प ख", "विकल्प ग", "विकल्प घ"],
-    answer: i % 4,
-  }));
-}
-
 export const generateQuiz = createServerFn({ method: "POST" })
   .inputValidator((data) => input.parse(data))
   .handler(async ({ data }): Promise<{ questions: GeneratedQuestion[]; simulated: boolean }> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) return { questions: simulate(data.topic, data.classLevel), simulated: true };
+    if (!apiKey) return { questions: buildQuestions(data), simulated: true };
 
     try {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -61,6 +52,6 @@ export const generateQuiz = createServerFn({ method: "POST" })
       if (questions.length === 0) throw new Error("empty");
       return { questions, simulated: false };
     } catch {
-      return { questions: simulate(data.topic, data.classLevel), simulated: true };
+      return { questions: buildQuestions(data), simulated: true };
     }
   });

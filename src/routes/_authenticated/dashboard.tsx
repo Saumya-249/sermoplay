@@ -5,7 +5,6 @@ import { useApp } from "@/lib/app-context";
 import { WORKING_GAME_LIBRARY } from "@/lib/working-games";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { HardDrive, CloudUpload, Gamepad2, Play } from "lucide-react";
 

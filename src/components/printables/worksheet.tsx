@@ -21,7 +21,7 @@ export function Worksheet({ quiz, url }: { quiz: WorksheetQuiz; url: string }) {
   return (
     <div
       id="worksheet-print"
-      className="mx-auto w-full max-w-[794px] bg-white p-8 text-black"
+      className="worksheet-print-container mx-auto w-full max-w-[794px] bg-white p-8 text-black"
       style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
     >
       <div className="flex items-start justify-between gap-6 border-b-2 border-black pb-4">
@@ -58,7 +58,7 @@ export function Worksheet({ quiz, url }: { quiz: WorksheetQuiz; url: string }) {
 
       <ol className="mt-5 space-y-5 text-black">
         {quiz.questions.map((q, i) => (
-          <li key={i} className="break-inside-avoid">
+          <li key={i} className="worksheet-question-item break-inside-avoid">
             <p className="text-sm font-semibold">
               {i + 1}. {q.prompt}
             </p>

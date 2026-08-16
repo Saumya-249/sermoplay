@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { saveResult, loadResults } from "@/lib/quiz-local";
+import { saveResult, loadResults, saveOfflineScore } from "@/lib/quiz-local";
+import { cachedQuizById } from "@/lib/offline-library";
+import { useApp } from "@/lib/app-context";
 import { toast } from "sonner";
 import { ArrowLeft, Check, X, Trophy, Sparkles, RotateCcw, HardDriveDownload } from "lucide-react";
 
@@ -78,6 +80,7 @@ const T = {
 function QuizPlayer() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const { online } = useApp();
   const [lang, setLang] = useState<Lang>("hi");
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -89,10 +92,15 @@ function QuizPlayer() {
   const t = T[lang];
 
   const quiz = useQuery({
-    queryKey: ["quiz", id],
+    queryKey: ["quiz", id, online],
     queryFn: async () => {
+      if (!online) return cachedQuizById(id) as never;
       const { data, error } = await supabase.from("quizzes").select("*").eq("id", id).maybeSingle();
-      if (error) throw error;
+      if (error) {
+        const fallback = cachedQuizById(id);
+        if (fallback) return fallback as never;
+        throw error;
+      }
       return data;
     },
   });
@@ -152,8 +160,19 @@ function QuizPlayer() {
       completedAt: new Date().toISOString(),
     });
     setHistory(next);
+    if (!online) {
+      saveOfflineScore({
+        quizId: quiz.data!.id,
+        quizTitle: quiz.data!.title,
+        score,
+        correct: finalCorrect,
+        total,
+        lang,
+        completedAt: new Date().toISOString(),
+      });
+    }
     setFinished(true);
-    toast.success("Saved to local storage", {
+    toast.success(online ? "Saved to local storage" : "📦 Saved to offline score history", {
       description: `${finalCorrect}/${total} · ${score}% — ${t.saved}`,
     });
   };

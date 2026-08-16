@@ -289,32 +289,63 @@ const LOCALE: Record<
   },
 };
 
-/** Generic but believable English seeds, specialised by subject. */
-function genericSeeds(subject: string, classLevel: string, language: string, topic: string): Seed[] {
+/** Generic but believable English seeds, specialised by subject and set variant. */
+function genericSeeds(
+  subject: string,
+  classLevel: string,
+  language: string,
+  topic: string,
+  setIndex = 0,
+): Seed[] {
   const loc = LOCALE[language] ?? LOCALE["Hindi"]!;
   const t = topic.trim() || subject;
-  const askEn = [
-    `What is a primary concept of ${subject} for ${classLevel} in ${language}?`,
-    `Which statement about "${t}" is correct for ${classLevel}?`,
-    `A teacher explains "${t}". Which example fits best?`,
-    `Which everyday situation uses "${t}"?`,
-    `Which of these best defines "${t}" in ${subject}?`,
+
+  const templateSets = [
+    {
+      askEn: [
+        `What is a primary concept of ${subject} for ${classLevel} in ${language}?`,
+        `Which statement about "${t}" is correct for ${classLevel}?`,
+        `A teacher explains "${t}". Which example fits best?`,
+        `Which everyday situation uses "${t}"?`,
+        `Which of these best defines "${t}" in ${subject}?`,
+      ],
+      optsEn: [
+        [`The core idea of ${t} taught in ${classLevel}`, `A partly correct statement about ${t}`, `A rule from a different chapter`, "None of these"],
+        [`${t} is applied step by step`, `${t} is only memorised`, `${t} has no examples`, `${t} is not part of ${subject}`],
+        [`Measuring or observing ${t} in class`, `Ignoring ${t} completely`, `Copying without understanding`, "Guessing the answer"],
+        [`Using ${t} at the market or at home`, `Only in exams`, `Never in daily life`, "Only in higher classes"],
+        [`A clear, textbook definition of ${t}`, `An unrelated definition`, `A definition from another subject`, "No definition exists"],
+      ],
+    },
+    {
+      askEn: [
+        `Which skill in ${subject} is most important for ${classLevel} students?`,
+        `What would happen if you ignored "${t}" while studying ${subject}?`,
+        `Choose the best example of "${t}" from daily life.`,
+        `How can a ${classLevel} student check whether they understand "${t}"?`,
+        `Which question about "${t}" would a teacher most likely ask?`,
+      ],
+      optsEn: [
+        ["Solving problems step by step", "Memorising without understanding", "Skipping practice", "Avoiding the topic"],
+        ["They would make many mistakes", "They would finish faster", "The topic becomes easier", "Nothing changes"],
+        ["A real-life use they have seen", "A made-up example", "A rule from a different subject", "No example at all"],
+        ["They can explain it to a friend", "They can only copy notes", "They can read the heading", "They can guess the answer"],
+        ["A question that needs thinking", "A question with no answer", "A question from another language", "A question about the textbook cover"],
+      ],
+    },
   ];
-  const optsEn = [
-    [`The core idea of ${t} taught in ${classLevel}`, `A partly correct statement about ${t}`, `A rule from a different chapter`, "None of these"],
-    [`${t} is applied step by step`, `${t} is only memorised`, `${t} has no examples`, `${t} is not part of ${subject}`],
-    [`Measuring or observing ${t} in class`, `Ignoring ${t} completely`, `Copying without understanding`, "Guessing the answer"],
-    [`Using ${t} at the market or at home`, `Only in exams`, `Never in daily life`, "Only in higher classes"],
-    [`A clear, textbook definition of ${t}`, `An unrelated definition`, `A definition from another subject`, "No definition exists"],
-  ];
-  return askEn.map((en, i) => ({
+
+  const set = templateSets[setIndex % templateSets.length]!;
+
+  return set.askEn.map((en, i) => ({
     en,
     loc: i === 0 ? loc.concept(subject, classLevel) : `${loc.concept(subject, classLevel)} (${t} — ${i + 1})`,
-    optionsEn: optsEn[i]!,
+    optionsEn: set.optsEn[i]!,
     optionsLoc: [loc.correct, loc.near, loc.wrong, loc.unrelated],
     correct: 0,
   }));
 }
+
 
 function shuffleOptions(seed: Seed): BankQuestion {
   const idx = [0, 1, 2, 3];
@@ -336,9 +367,13 @@ export function buildQuestions(args: {
   subject: string;
   classLevel: string;
   language: string;
+  set?: number;
 }): BankQuestion[] {
+  const setIndex = args.set ?? 0;
+  const key = `${args.language}|${args.subject}`;
   const seeds =
-    BANK[`${args.language}|${args.subject}`] ??
-    genericSeeds(args.subject, args.classLevel, args.language, args.topic);
+    setIndex === 0 && BANK[key]
+      ? BANK[key]
+      : genericSeeds(args.subject, args.classLevel, args.language, args.topic, setIndex);
   return seeds.slice(0, 5).map(shuffleOptions);
 }

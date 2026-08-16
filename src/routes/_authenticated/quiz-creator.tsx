@@ -19,9 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { generateQuiz } from "@/lib/quiz-ai.functions";
+import { generateQuiz, type GeneratedQuestion } from "@/lib/quiz-ai.functions";
 
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
   head: () => ({
@@ -55,7 +55,7 @@ function QuizCreator() {
   const qc = useQueryClient();
   const runGenerate = useServerFn(generateQuiz);
   const [title, setTitle] = useState("");
-  const [language, setLanguage] = useState<string>("Hindi");
+  const [language, setLanguage] = useState<string>("English");
   const [subject, setSubject] = useState<string>("Maths");
   const [classLevel, setClassLevel] = useState<string>("Class 5");
   const [difficulty, setDifficulty] = useState<string>("Easy");
@@ -63,6 +63,7 @@ function QuizCreator() {
   const [duration, setDuration] = useState(10);
   const [published, setPublished] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
+  const [generationSet, setGenerationSet] = useState(0);
 
   const myQuizzes = useQuery({
     queryKey: ["quizzes", userId],
@@ -119,44 +120,66 @@ function QuizCreator() {
       setTitle("");
       setTopic("");
       setQuestions([emptyQuestion()]);
+      setGenerationSet(0);
       qc.invalidateQueries({ queryKey: ["quizzes"] });
       qc.invalidateQueries({ queryKey: ["sync_queue"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  async function generateSet(setIndex: number) {
+    if (!topic.trim()) throw new Error("Add a topic first so the AI knows what to write about");
+    return runGenerate({
+      data: { topic, subject, classLevel, language, difficulty, set: setIndex },
+    });
+  }
+
+  function applyGenerated(res: { questions: GeneratedQuestion[]; simulated: boolean }) {
+    const useLocal = language !== "English";
+    setQuestions(
+      res.questions.map((q) => {
+        const localPrompt = useLocal && q.prompt_hi?.trim() ? q.prompt_hi : q.prompt_en;
+        const localOptions =
+          useLocal && Array.isArray(q.options_hi) && q.options_hi.length === q.options_en.length
+            ? q.options_hi
+            : q.options_en;
+        return {
+          prompt: localPrompt,
+          options: localOptions,
+          answer: q.answer ?? 0,
+          prompt_hi: q.prompt_hi ?? localPrompt,
+          options_hi: q.options_hi ?? localOptions,
+          prompt_en: q.prompt_en,
+          options_en: q.options_en,
+        };
+      }),
+    );
+    if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
+  }
+
   const generate = useMutation({
-    mutationFn: async () => {
-      if (!topic.trim()) throw new Error("Add a topic first so the AI knows what to write about");
-      return runGenerate({
-        data: { topic, subject, classLevel, language, difficulty },
-      });
-    },
+    mutationFn: async () => generateSet(0),
     onSuccess: (res) => {
-      // Always show the questions in the currently selected language.
-      const useLocal = language !== "English";
-      setQuestions(
-        res.questions.map((q) => {
-          const localPrompt = useLocal && q.prompt_hi?.trim() ? q.prompt_hi : q.prompt_en;
-          const localOptions =
-            useLocal && Array.isArray(q.options_hi) && q.options_hi.length === q.options_en.length
-              ? q.options_hi
-              : q.options_en;
-          return {
-            prompt: localPrompt,
-            options: localOptions,
-            answer: q.answer ?? 0,
-            prompt_hi: q.prompt_hi ?? localPrompt,
-            options_hi: q.options_hi ?? localOptions,
-            prompt_en: q.prompt_en,
-            options_en: q.options_en,
-          };
-        }),
-      );
-      if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
+      applyGenerated(res);
       toast.success(res.simulated ? "Generated 5 sample questions" : "AI generated 5 questions");
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+
+  const regenerate = useMutation({
+    mutationFn: async () => generateSet(generationSet + 1),
+    onMutate: () => {
+      setQuestions([]);
+    },
+    onSuccess: (res) => {
+      setGenerationSet((n) => n + 1);
+      applyGenerated(res);
+      toast.success(res.simulated ? "Regenerated 5 sample questions" : "Regenerated 5 fresh questions");
+    },
+    onError: (e: Error) => {
+      toast.error(e.message);
+      setQuestions([emptyQuestion()]);
+    },
   });
 
   function updateQuestion(i: number, patch: Partial<Question>) {
@@ -164,6 +187,7 @@ function QuizCreator() {
   }
 
   const valid = title.trim() !== "" && questions.every((q) => q.prompt.trim() !== "");
+  const busy = generate.isPending || regenerate.isPending;
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -216,19 +240,35 @@ function QuizCreator() {
               </div>
               <Switch checked={published} onCheckedChange={setPublished} />
             </div>
-            <Button
-              size="lg"
-              className="w-full"
-              disabled={generate.isPending}
-              onClick={() => generate.mutate()}
-            >
-              {generate.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
-              )}
-              AI Generate Quiz
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                size="lg"
+                className="flex-1"
+                disabled={busy}
+                onClick={() => generate.mutate()}
+              >
+                {generate.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                AI Generate Quiz
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="flex-1"
+                disabled={busy || questions.length === 0}
+                onClick={() => regenerate.mutate()}
+              >
+                {regenerate.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                {regenerate.isPending ? "Regenerating..." : "Regenerate Questions"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

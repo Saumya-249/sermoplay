@@ -8,6 +8,7 @@ const input = z.object({
   classLevel: z.string(),
   language: z.string(),
   difficulty: z.string(),
+  set: z.number().optional().default(0),
 });
 
 export type GeneratedQuestion = {
@@ -22,6 +23,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
   .inputValidator((data) => input.parse(data))
   .handler(async ({ data }): Promise<{ questions: GeneratedQuestion[]; simulated: boolean }> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
+    const variantNote = data.set > 0 ? ` This is alternative set ${data.set}; generate a different set of questions from any previous version.` : "";
     if (!apiKey) return { questions: buildQuestions(data), simulated: true };
 
     try {
@@ -41,7 +43,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
               content: `Create exactly 5 multiple-choice questions (4 options each) for ${data.classLevel} ${data.subject}, topic "${data.topic}", difficulty ${data.difficulty}.
 Selected language: ${data.language}.
 "prompt_hi"/"options_hi" MUST be written fully in ${data.language} (native script), including word problems localized with ₹ (e.g. "248 + 176 का योग क्या होगा?"). "prompt_en"/"options_en" are the English equivalents. Both arrays must be in the same order, so index "answer" is correct in both.
-Return JSON only: {"questions":[{"prompt_en":"","prompt_hi":"","options_en":["","","",""],"options_hi":["","","",""],"answer":0}]} where answer is the 0-based index of the correct option.`,
+Return JSON only: {"questions":[{"prompt_en":"","prompt_hi":"","options_en":["","","",""],"options_hi":["","","",""],"answer":0}]} where answer is the 0-based index of the correct option.${variantNote}`,
             },
           ],
         }),

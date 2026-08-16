@@ -19,9 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Sparkles, Loader2, RefreshCw } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { generateQuiz, type GeneratedQuestion } from "@/lib/quiz-ai.functions";
+import { Plus, Trash2, Sparkles, Loader2, RefreshCw, ChevronDown, Plug } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  fetchAIQuizQuestions,
+  AI_KEY_STORAGE,
+  AI_PROVIDER_STORAGE,
+  type AIProvider,
+} from "@/lib/ai-live";
 
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
   head: () => ({
@@ -53,7 +58,6 @@ const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], 
 function QuizCreator() {
   const { userId, online } = useApp();
   const qc = useQueryClient();
-  const runGenerate = useServerFn(generateQuiz);
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState<string>("English");
   const [subject, setSubject] = useState<string>("Maths");
@@ -67,6 +71,26 @@ function QuizCreator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [renderToken, setRenderToken] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(true);
+  const [apiKey, setApiKey] = useState("");
+  const [provider, setProvider] = useState<AIProvider>("gemini");
+
+  useEffect(() => {
+    const storedKey = localStorage.getItem(AI_KEY_STORAGE);
+    const storedProvider = localStorage.getItem(AI_PROVIDER_STORAGE) as AIProvider | null;
+    if (storedKey) setApiKey(storedKey);
+    if (storedProvider === "gemini" || storedProvider === "openai") setProvider(storedProvider);
+  }, []);
+
+  function updateApiKey(value: string) {
+    setApiKey(value);
+    localStorage.setItem(AI_KEY_STORAGE, value);
+  }
+
+  function updateProvider(value: AIProvider) {
+    setProvider(value);
+    localStorage.setItem(AI_PROVIDER_STORAGE, value);
+  }
 
   const myQuizzes = useQuery({
     queryKey: ["quizzes", userId],

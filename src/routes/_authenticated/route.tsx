@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { AppProvider, useApp } from "@/lib/app-context";
 import {
   LayoutDashboard,
@@ -27,6 +28,7 @@ import {
   LogOut,
   Wifi,
   WifiOff,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -61,7 +63,7 @@ function AppLayout() {
 function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { online, setOnline, userEmail } = useApp();
+  const { online, setOnline, userEmail, pendingQueue, syncing } = useApp();
 
   return (
     <>
@@ -88,6 +90,9 @@ function Shell() {
                       <Link to={item.to}>
                         <item.icon />
                         <span>{item.label}</span>
+                        {item.to === "/sync" && pendingQueue.length > 0 && (
+                          <Badge className="ml-auto">{pendingQueue.length}</Badge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -112,6 +117,46 @@ function Shell() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="surface-paper">
+        <div
+          className={`flex flex-wrap items-center gap-3 border-b px-4 py-2 text-sm ${
+            online
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : "bg-amber-500/15 text-amber-800 dark:text-amber-300"
+          }`}
+        >
+          <span className="flex items-center gap-2 font-medium">
+            🌐 Network Status
+            <Switch
+              checked={online}
+              onCheckedChange={setOnline}
+              aria-label="Toggle network status"
+            />
+          </span>
+          <span className="flex items-center gap-2 rounded-full border border-current/30 px-3 py-1 text-xs font-semibold">
+            {online ? (
+              <>
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                </span>
+                🟢 Online (Connected to Cloud Server)
+              </>
+            ) : (
+              <>🟡 Offline Mode (Local Sandbox Active)</>
+            )}
+          </span>
+          {pendingQueue.length > 0 && (
+            <Link to="/sync" className="ml-auto">
+              <Badge variant="secondary">{pendingQueue.length} items pending sync</Badge>
+            </Link>
+          )}
+        </div>
+        {syncing && (
+          <div className="flex items-center gap-3 border-b bg-background/90 px-4 py-3 text-sm font-medium">
+            <Loader2 className="size-4 animate-spin text-primary" />
+            Detecting network connection... Synchronizing local data to cloud repository...
+          </div>
+        )}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger />
           <h2 className="text-base font-semibold">

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
@@ -154,50 +154,23 @@ function QuizCreator() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function applyGenerated(res: { questions: GeneratedQuestion[]; simulated: boolean }) {
-    const useLocal = language !== "English";
-    setQuestions(
-      res.questions.map((q) => {
-        const localPrompt = useLocal && q.prompt_hi?.trim() ? q.prompt_hi : q.prompt_en;
-        const localOptions =
-          useLocal && Array.isArray(q.options_hi) && q.options_hi.length === q.options_en.length
-            ? q.options_hi
-            : q.options_en;
-        return {
-          prompt: localPrompt,
-          options: localOptions,
-          answer: q.answer ?? 0,
-          prompt_hi: q.prompt_hi ?? localPrompt,
-          options_hi: q.options_hi ?? localOptions,
-          prompt_en: q.prompt_en,
-          options_en: q.options_en,
-        };
-      }),
-    );
-    if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
-    setRenderToken((n) => n + 1);
-  }
-
   /**
    * Single execution handler shared by both "AI Generate Quiz" and
-   * "Regenerate Questions". Reads live form state, calls the secure server
-   * endpoint (which falls back to the programmatic Academic Matrix when no
-   * AI key is available), then overwrites the Q1..Q5 state arrays.
+   * "Regenerate Questions". Reads live form state, calls the selected live AI
+   * provider directly with the teacher's own API key, then overwrites Q1..Q5.
    */
   async function handleQuestionGeneration(mode: "generate" | "regenerate") {
-    // 1. Read real-time form state
-    const payload = {
-      title,
-      topic: topic.trim(),
-      subject,
-      classLevel,
-      language,
-      difficulty,
-      set: mode === "regenerate" ? generationSet + 1 : 0,
-    };
-    console.log("[QuizCreator] generation payload", mode, payload);
+    const variant = mode === "regenerate" ? generationSet + 1 : 0;
+    const cleanTopic = topic.trim();
 
-    if (!payload.topic) {
+    if (!apiKey.trim()) {
+      setSettingsOpen(true);
+      toast.error(
+        "Please input your AI API Key in the AI Core Configuration drawer above to generate dynamic live questions.",
+      );
+      return;
+    }
+    if (!cleanTopic) {
       toast.error("Add a topic first so the generator knows what to write about");
       return;
     }
@@ -208,19 +181,27 @@ function QuizCreator() {
     setQuestions([]); // clear active questions before a fresh run
 
     try {
-      const res = await runGenerate({ data: payload });
-      console.log("[QuizCreator] generated questions", res.questions);
+      const live = await fetchAIQuizQuestions({
+        provider,
+        apiKey: apiKey.trim(),
+        subject,
+        topic: cleanTopic,
+        classLevel,
+        language,
+        difficulty,
+        variant,
+      });
       if (mode === "regenerate") setGenerationSet((n) => n + 1);
-      applyGenerated(res);
-      toast.success(
-        mode === "regenerate"
-          ? res.simulated
-            ? "Regenerated 5 sample questions"
-            : "Regenerated 5 fresh questions"
-          : res.simulated
-            ? "Generated 5 sample questions"
-            : "AI generated 5 questions",
+      setQuestions(
+        live.map((q) => ({
+          prompt: q.q,
+          options: [0, 1, 2, 3].map((i) => q.options[i] ?? ""),
+          answer: q.correct,
+        })),
       );
+      if (!title.trim()) setTitle(`${cleanTopic} — ${classLevel} ${subject} Quiz`);
+      setRenderToken((n) => n + 1);
+      toast.success(mode === "regenerate" ? "Regenerated 5 fresh AI questions" : "AI generated 5 questions");
     } catch (e) {
       console.error("[QuizCreator] generation failed", e);
       toast.error(e instanceof Error ? e.message : "Generation failed");

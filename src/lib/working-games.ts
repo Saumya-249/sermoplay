@@ -58,8 +58,6 @@ function shuffleWithCorrect(options: string[], seed: number): { options: string[
 /* MATH — procedurally generated, real calculations, scaled by class    */
 /* ------------------------------------------------------------------ */
 
-const n = (x: number) => String(x);
-
 function mathPacks(cls: number): Pack[] {
   const k = cls;
   if (k === 1)
@@ -259,7 +257,7 @@ function mathPacks(cls: number): Pack[] {
         titleHi: "बड़ी संख्या स्थानीय मान",
         emoji: "🏦",
         items: [
-          { en: "What is the place value of 7 in 47,станд".replace("станд", "302") + "?", hi: "47,302 में 7 का स्थानीय मान क्या है?", optionsEn: ["7,000", "700", "70", "7"], optionsHi: ["7,000", "700", "70", "7"] },
+          { en: "What is the place value of 7 in 47,302?", hi: "47,302 में 7 का स्थानीय मान क्या है?", optionsEn: ["7,000", "700", "70", "7"], optionsHi: ["7,000", "700", "70", "7"] },
           { en: "Round 6,847 to the nearest hundred.", hi: "6,847 को निकटतम सैकड़े में पूर्णांकित करें।", optionsEn: ["6,800", "6,900", "6,850", "7,000"], optionsHi: ["6,800", "6,900", "6,850", "7,000"] },
           { en: "Which number is the largest?", hi: "कौन-सी संख्या सबसे बड़ी है?", optionsEn: ["9,081", "8,910", "9,018", "8,999"], optionsHi: ["9,081", "8,910", "9,018", "8,999"] },
           { en: "How many zeros are there in one lakh?", hi: "एक लाख में कितने शून्य होते हैं?", optionsEn: ["5", "4", "6", "3"], optionsHi: ["5", "4", "6", "3"] },
@@ -775,5 +773,3 @@ export function findWorkingGame(id: string): WorkingGame | undefined {
 }
 
 export const TOTAL_WORKING_GAMES = WORKING_GAME_LIBRARY.length;
-
-void n;

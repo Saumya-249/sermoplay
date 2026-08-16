@@ -1,3 +1,4 @@
+import { synthesizeQuestions } from "./academic-matrix";
 export type BankQuestion = {
   prompt_en: string;
   prompt_hi: string;
@@ -843,6 +844,16 @@ export function buildQuestions(args: {
   const setIndex = args.set ?? 0;
   const r = mulberry32(Math.floor(Math.random() * 1e9) + setIndex * 7919);
   const lang = MATH[args.language] ? args.language : "English";
+
+  // 0. Academic Question Synthesis Matrix wins for English / Hindi.
+  if (args.language === "English" || args.language === "Hindi") {
+    return synthesizeQuestions({
+      topic: args.topic ?? "",
+      subject: args.subject,
+      language: args.language,
+      set: setIndex,
+    });
+  }
 
   // 1. The typed topic always wins.
   const fromTopic = topicSeeds(args.topic ?? "", lang, r);

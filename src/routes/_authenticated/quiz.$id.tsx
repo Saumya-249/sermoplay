@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { saveResult, loadResults, saveOfflineScore } from "@/lib/quiz-local";
 import { cachedQuizById } from "@/lib/offline-library";
+import { findWorkingGame } from "@/lib/working-games";
 import { useApp } from "@/lib/app-context";
 import { toast } from "sonner";
 import { ArrowLeft, Check, X, Trophy, Sparkles, RotateCcw, HardDriveDownload } from "lucide-react";
@@ -81,7 +82,8 @@ function QuizPlayer() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { online } = useApp();
-  const [lang, setLang] = useState<Lang>("hi");
+  const staticGame = findWorkingGame(id);
+  const [lang, setLang] = useState<Lang>(staticGame ? (staticGame.language === "Hindi" ? "hi" : "en") : "hi");
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [answers, setAnswers] = useState<boolean[]>([]);
@@ -94,6 +96,20 @@ function QuizPlayer() {
   const quiz = useQuery({
     queryKey: ["quiz", id, online],
     queryFn: async () => {
+      if (staticGame) {
+        return {
+          id: staticGame.id,
+          title: staticGame.title,
+          subject: staticGame.subject,
+          class_level: staticGame.classLevel,
+          difficulty: staticGame.language,
+          questions: staticGame.questions.map((q) => ({
+            prompt: q.q,
+            options: q.options,
+            answer: q.correct,
+          })),
+        } as never;
+      }
       if (!online) return cachedQuizById(id) as never;
       const { data, error } = await supabase.from("quizzes").select("*").eq("id", id).maybeSingle();
       if (error) {

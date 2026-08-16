@@ -29,7 +29,7 @@ export async function generateLiveQuestions(p: {
 
   if (res.status === 429) throw new Error("AI rate limit reached — please try again in a moment.");
   if (res.status === 402) throw new Error("AI credits exhausted — add credits in Settings → Plans & credits.");
-  if (!res.ok) throw new Error(`AI request failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) throw new Error(`AI request failed (${res.status})`);
 
   const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
   const raw = (json.choices?.[0]?.message?.content ?? "").replace(/```json/gi, "").replace(/```/g, "").trim();

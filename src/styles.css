@@ -164,3 +164,38 @@
     radial-gradient(circle at 12% 8%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 45%),
     radial-gradient(circle at 88% 0%, color-mix(in oklch, var(--accent) 12%, transparent), transparent 40%);
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #worksheet-print,
+  #worksheet-print * {
+    visibility: visible !important;
+  }
+
+  #worksheet-print {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}

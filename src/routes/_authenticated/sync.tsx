@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { CloudUpload, WifiOff, Wifi, Trash2, PlusCircle } from "lucide-react";
+import { CloudUpload, WifiOff, Wifi, Trash2, PlusCircle, Loader2 } from "lucide-react";
+import { removePendingQuiz } from "@/lib/pending-sync";
 
 export const Route = createFileRoute("/_authenticated/sync")({
   head: () => ({
@@ -34,7 +35,7 @@ const SAMPLE = [
 ];
 
 function SyncPanel() {
-  const { userId, online, setOnline } = useApp();
+  const { userId, online, setOnline, pendingQueue, syncing: localSyncing, syncNow } = useApp();
   const qc = useQueryClient();
   const [progress, setProgress] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -108,6 +109,49 @@ function SyncPanel() {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Offline quiz queue (local storage)</CardTitle>
+            <CardDescription>
+              {pendingQueue.length === 0
+                ? "No quizzes trapped locally."
+                : `${pendingQueue.length} quiz(zes) waiting to reach the cloud.`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingQueue.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 rounded-lg border p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Saved offline · {new Date(item.savedAt).toLocaleString()}
+                  </p>
+                </div>
+                <Badge variant="secondary">pending</Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  aria-label={`Discard ${item.title}`}
+                  onClick={() => removePendingQuiz(item.id)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+            {localSyncing && (
+              <div className="flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm font-medium">
+                <Loader2 className="size-4 animate-spin text-primary" />
+                Detecting network connection... Synchronizing local data to cloud repository...
+              </div>
+            )}
+            {pendingQueue.length > 0 && (
+              <Button onClick={() => void syncNow()} disabled={!online || localSyncing}>
+                <CloudUpload className="size-4" /> Sync offline quizzes now
+              </Button>
+            )}
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Local data queue</CardTitle>

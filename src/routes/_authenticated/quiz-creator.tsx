@@ -44,6 +44,8 @@ type Question = {
   answer: number;
   prompt_hi?: string;
   options_hi?: string[];
+  prompt_en?: string;
+  options_en?: string[];
 };
 
 const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], answer: 0 });
@@ -90,8 +92,8 @@ function QuizCreator() {
           prompt: q.prompt,
           options: q.options,
           answer: q.answer,
-          prompt_en: q.prompt,
-          options_en: q.options,
+          prompt_en: q.prompt_en ?? q.prompt,
+          options_en: q.options_en ?? q.options,
           prompt_hi: q.prompt_hi ?? q.prompt,
           options_hi: q.options_hi ?? q.options,
         })),
@@ -131,14 +133,25 @@ function QuizCreator() {
       });
     },
     onSuccess: (res) => {
+      // Always show the questions in the currently selected language.
+      const useLocal = language !== "English";
       setQuestions(
-        res.questions.map((q) => ({
-          prompt: q.prompt_en,
-          options: q.options_en,
-          answer: q.answer ?? 0,
-          prompt_hi: q.prompt_hi,
-          options_hi: q.options_hi,
-        })),
+        res.questions.map((q) => {
+          const localPrompt = useLocal && q.prompt_hi?.trim() ? q.prompt_hi : q.prompt_en;
+          const localOptions =
+            useLocal && Array.isArray(q.options_hi) && q.options_hi.length === q.options_en.length
+              ? q.options_hi
+              : q.options_en;
+          return {
+            prompt: localPrompt,
+            options: localOptions,
+            answer: q.answer ?? 0,
+            prompt_hi: q.prompt_hi ?? localPrompt,
+            options_hi: q.options_hi ?? localOptions,
+            prompt_en: q.prompt_en,
+            options_en: q.options_en,
+          };
+        }),
       );
       if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
       toast.success(res.simulated ? "Generated 5 sample questions" : "AI generated 5 questions");
@@ -231,7 +244,7 @@ function QuizCreator() {
           </CardHeader>
           <CardContent className="space-y-5">
             {questions.map((q, i) => (
-              <div key={i} className="space-y-3 rounded-lg border p-3">
+              <div key={`${language}-${i}`} className="space-y-3 rounded-lg border p-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">Q{i + 1}</Badge>
                   {questions.length > 1 && (

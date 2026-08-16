@@ -34,11 +34,14 @@ export const generateQuiz = createServerFn({ method: "POST" })
             {
               role: "system",
               content:
-                "You write school quiz questions for Indian classrooms. Always return strict JSON only.",
+                "You write school quiz questions for Indian classrooms. You are fluent in Indian regional languages and always write the localized fields in that language's native script (Hindi = Devanagari), never transliterated English. Use ₹ for money. Always return strict JSON only.",
             },
             {
               role: "user",
-              content: `Create exactly 5 multiple-choice questions (4 options each) for ${data.classLevel} ${data.subject}, topic "${data.topic}", difficulty ${data.difficulty}. Provide each question in English and in ${data.language}. Return JSON: {"questions":[{"prompt_en":"","prompt_hi":"","options_en":["","","",""],"options_hi":["","","",""],"answer":0}]} where answer is the 0-based index of the correct option.`,
+              content: `Create exactly 5 multiple-choice questions (4 options each) for ${data.classLevel} ${data.subject}, topic "${data.topic}", difficulty ${data.difficulty}.
+Selected language: ${data.language}.
+"prompt_hi"/"options_hi" MUST be written fully in ${data.language} (native script), including word problems localized with ₹ (e.g. "248 + 176 का योग क्या होगा?"). "prompt_en"/"options_en" are the English equivalents. Both arrays must be in the same order, so index "answer" is correct in both.
+Return JSON only: {"questions":[{"prompt_en":"","prompt_hi":"","options_en":["","","",""],"options_hi":["","","",""],"answer":0}]} where answer is the 0-based index of the correct option.`,
             },
           ],
         }),

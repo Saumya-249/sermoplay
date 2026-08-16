@@ -104,6 +104,12 @@ async function handleIsolatedPrint(quiz: PrintableQuiz) {
         <div class="header">${esc(quiz.title)}</div>
         <div class="subheader">Regional-Language Game Library</div>
 
+        <div style="float: right; text-align: center; margin-top: -50px;">
+          <img src="https://qrserver.com${encodeURIComponent(window.location.origin + '/play/' + quiz.id)}" alt="QR Code" style="width: 100px; height: 100px;" />
+          <div style="font-size: 10px; margin-top: 4px; color: #555; max-width: 100px;">Scan to play digital version offline</div>
+        </div>
+        <div style="clear: both;"></div>
+
         <div class="student-meta">
           <div class="meta-field">Student Name: _______________________</div>
           <div class="meta-field">Roll No: ___________</div>

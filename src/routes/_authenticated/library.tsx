@@ -1,9 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
-import { LANGUAGES, SUBJECTS, CLASSES } from "@/lib/constants";
+import {
+  WORKING_GAME_LIBRARY,
+  SUBJECT_LIST,
+  CLASS_LIST,
+  LANGUAGE_LIST,
+} from "@/lib/working-games";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Download, Check, Search, Play } from "lucide-react";
+import { Check, Search, Play } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cacheLibrarySection, cachedGames, cachedQuizzes } from "@/lib/offline-library";
+import { cacheLibrarySection, cachedQuizzes } from "@/lib/offline-library";
 
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({
@@ -38,23 +42,13 @@ export const Route = createFileRoute("/_authenticated/library")({
 const ALL = "all";
 
 function LibraryPage() {
-  const { userId, online } = useApp();
-  const qc = useQueryClient();
+  const { online } = useApp();
   const [language, setLanguage] = useState<string>(ALL);
   const [subject, setSubject] = useState<string>(ALL);
   const [classLevel, setClassLevel] = useState<string>(ALL);
   const [search, setSearch] = useState("");
 
-  const games = useQuery({
-    queryKey: ["games", online],
-    queryFn: async () => {
-      if (!online) return cachedGames() as never[];
-      const { data, error } = await supabase.from("games").select("*").order("title");
-      if (error) throw error;
-      cacheLibrarySection("games", data ?? []);
-      return data;
-    },
-  });
+  const games = WORKING_GAME_LIBRARY;
 
   const quizzes = useQuery({
     queryKey: ["library-quizzes", online],

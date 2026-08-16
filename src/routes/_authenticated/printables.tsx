@@ -1,18 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Printer, FileDown } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { cachedQuizzes, cacheLibrarySection } from "@/lib/offline-library";
+import { useApp } from "@/lib/app-context";
+import { Worksheet, type WorksheetQuiz } from "@/components/printables/worksheet";
+import { Printer, FileText, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/printables")({
   head: () => ({
@@ -20,142 +17,150 @@ export const Route = createFileRoute("/_authenticated/printables")({
       { title: "Printable Hub | Regional-Language Game Library" },
       {
         name: "description",
-        content: "Convert any classroom game into a printable worksheet and generate a ready-to-print PDF.",
+        content:
+          "Generate black-and-white A4 classroom worksheets with QR codes from any quiz, then print or save as PDF.",
       },
       { property: "og:title", content: "Printable Hub | Regional-Language Game Library" },
-      { property: "og:description", content: "Game-to-worksheet generation for low-device classrooms." },
+      {
+        property: "og:description",
+        content: "Game-to-worksheet printables with scannable QR codes for low-device classrooms.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Printables,
 });
 
-type Sheet = "Worksheet" | "Flashcards" | "Crossword";
+type RawQuestion = {
+  prompt?: string;
+  prompt_en?: string;
+  prompt_hi?: string;
+  options?: string[];
+  options_en?: string[];
+  options_hi?: string[];
+};
+
+type QuizRow = {
+  id: string;
+  title: string;
+  subject: string;
+  class_level: string;
+  language: string;
+  topic?: string | null;
+  questions: unknown;
+};
+
+function normalize(row: QuizRow): WorksheetQuiz {
+  const hindi = row.language?.toLowerCase().includes("hindi");
+  const raw = Array.isArray(row.questions) ? (row.questions as RawQuestion[]) : [];
+  return {
+    id: row.id,
+    title: row.title,
+    subject: row.subject,
+    class_level: row.class_level,
+    language: row.language,
+    topic: row.topic ?? null,
+    questions: raw.map((q) => ({
+      prompt: (hindi ? q.prompt_hi : q.prompt_en) ?? q.prompt ?? q.prompt_en ?? q.prompt_hi ?? "",
+      options: ((hindi ? q.options_hi : q.options_en) ?? q.options ?? q.options_en ?? []).slice(0, 4),
+    })),
+  };
+}
 
 function Printables() {
-  const [gameId, setGameId] = useState<string>("");
-  const [sheet, setSheet] = useState<Sheet>("Worksheet");
+  const { online } = useApp();
+  const [active, setActive] = useState<WorksheetQuiz | null>(null);
 
-  const games = useQuery({
-    queryKey: ["games"],
+  const quizzes = useQuery({
+    queryKey: ["printable-quizzes", online],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("*").order("title");
-      if (error) throw error;
-      return data;
+      if (!online) return cachedQuizzes() as QuizRow[];
+      const { data, error } = await supabase.from("quizzes").select("*").order("title");
+      if (error) return cachedQuizzes() as QuizRow[];
+      cacheLibrarySection("quizzes", data ?? []);
+      return (data ?? []) as unknown as QuizRow[];
     },
   });
 
-  const game = (games.data ?? []).find((g) => g.id === gameId) ?? games.data?.[0];
+  const rows = useMemo(() => (quizzes.data ?? []).map(normalize), [quizzes.data]);
+
+  const previewUrl = (id: string) =>
+    typeof window === "undefined" ? `/quiz/${id}` : `${window.location.origin}/quiz/${id}`;
 
   return (
     <div className="space-y-6">
-      <div>
+      <header>
         <h1 className="text-2xl font-bold">Printable hub</h1>
         <p className="text-sm text-muted-foreground">
-          Turn a downloaded game into paper activities for classrooms with few devices.
+          Turn any quiz into a clean black-and-white A4 worksheet with a scannable QR code.
         </p>
-      </div>
+        {!online && (
+          <Badge variant="secondary" className="mt-2">
+            📦 Serving cached quizzes from local offline memory
+          </Badge>
+        )}
+      </header>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <Card className="h-fit print:hidden">
-          <CardHeader>
-            <CardTitle>Generate</CardTitle>
-            <CardDescription>Pick a game and a sheet format.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Select value={game?.id ?? ""} onValueChange={setGameId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a game" />
-              </SelectTrigger>
-              <SelectContent>
-                {(games.data ?? []).map((g) => (
-                  <SelectItem key={g.id} value={g.id}>
-                    {g.cover_emoji} {g.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sheet} onValueChange={(v) => setSheet(v as Sheet)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Worksheet">Worksheet</SelectItem>
-                <SelectItem value="Flashcards">Flashcards</SelectItem>
-                <SelectItem value="Crossword">Crossword</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button className="w-full" onClick={() => window.print()}>
-              <Printer className="size-4" /> Print / Save as PDF
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              <FileDown className="mr-1 inline size-3" />
-              Uses the browser print dialog — choose “Save as PDF” to store it offline.
-            </p>
-          </CardContent>
-        </Card>
+      {quizzes.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading quizzes…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No quizzes yet — create one in the Quiz Creator to generate worksheets.
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((quiz) => (
+            <Card key={quiz.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-base">{quiz.title}</CardTitle>
+                <CardDescription>
+                  {quiz.questions.length} questions · {quiz.topic ?? quiz.subject}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto space-y-4">
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge>{quiz.language}</Badge>
+                  <Badge variant="secondary">{quiz.subject}</Badge>
+                  <Badge variant="outline">{quiz.class_level}</Badge>
+                </div>
+                <Button className="w-full" onClick={() => setActive(quiz)}>
+                  <FileText className="size-4" /> 📄 Generate Classroom Worksheet
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-        <Card className="print:border-0 print:shadow-none">
-          <CardContent className="p-8">
-            {game ? (
-              <article className="mx-auto max-w-2xl space-y-6">
-                <header className="border-b pb-4">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                    {sheet} · {game.language}
-                  </p>
-                  <h2 className="mt-1 text-2xl font-bold">
-                    {game.cover_emoji} {game.title}
-                  </h2>
-                  <div className="mt-2 flex flex-wrap gap-1.5 print:hidden">
-                    <Badge variant="secondary">{game.subject}</Badge>
-                    <Badge variant="secondary">{game.class_level}</Badge>
-                    <Badge variant="outline">{game.difficulty}</Badge>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <p>Name: ______________________</p>
-                    <p>Date: ______________________</p>
-                  </div>
-                </header>
-                <section className="space-y-4 text-sm leading-relaxed">
-                  <p className="text-muted-foreground">{game.description}</p>
-                  {sheet === "Worksheet" &&
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="space-y-2">
-                        <p className="font-medium">
-                          {i + 1}. {game.topic ?? game.subject} practice question
-                        </p>
-                        <div className="h-8 border-b border-dashed" />
-                      </div>
-                    ))}
-                  {sheet === "Flashcards" && (
-                    <div className="grid grid-cols-2 gap-4">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex h-28 items-center justify-center rounded-lg border border-dashed text-muted-foreground"
-                        >
-                          Card {i + 1}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {sheet === "Crossword" && (
-                    <div className="grid grid-cols-8 gap-0.5">
-                      {Array.from({ length: 64 }).map((_, i) => (
-                        <div key={i} className="aspect-square border" />
-                      ))}
-                    </div>
-                  )}
-                </section>
-                <footer className="border-t pt-4 text-xs text-muted-foreground">
-                  Regional-Language Game Library · {game.duration_min} minute classroom activity
-                </footer>
-              </article>
-            ) : (
-              <p className="text-sm text-muted-foreground">Loading games…</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Dialog open={!!active} onOpenChange={(o) => !o && setActive(null)}>
+        <DialogContent
+          showCloseButton={false}
+          className="max-h-[92vh] max-w-4xl overflow-y-auto bg-muted p-0"
+        >
+          <DialogTitle className="sr-only">Worksheet preview</DialogTitle>
+          {active && (
+            <>
+              <div className="no-print sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background px-4 py-3">
+                <p className="text-sm font-medium">A4 worksheet preview · {active.title}</p>
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => window.print()}>
+                    <Printer className="size-4" /> 🖨️ Print / Save as PDF
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setActive(null)}>
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="shadow-lg">
+                  <Worksheet quiz={active} url={previewUrl(active.id)} />
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

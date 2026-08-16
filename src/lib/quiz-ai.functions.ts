@@ -8,6 +8,7 @@ const input = z.object({
   classLevel: z.string(),
   language: z.string(),
   difficulty: z.string(),
+  set: z.number().optional().default(0),
 });
 
 export type GeneratedQuestion = {

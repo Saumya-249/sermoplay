@@ -19,7 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { generateQuiz } from "@/lib/quiz-ai.functions";
 
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
   head: () => ({
@@ -36,13 +38,20 @@ export const Route = createFileRoute("/_authenticated/quiz-creator")({
   component: QuizCreator,
 });
 
-type Question = { prompt: string; options: string[]; answer: number };
+type Question = {
+  prompt: string;
+  options: string[];
+  answer: number;
+  prompt_hi?: string;
+  options_hi?: string[];
+};
 
 const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], answer: 0 });
 
 function QuizCreator() {
   const { userId, online } = useApp();
   const qc = useQueryClient();
+  const runGenerate = useServerFn(generateQuiz);
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState<string>("Hindi");
   const [subject, setSubject] = useState<string>("Maths");
@@ -77,7 +86,15 @@ function QuizCreator() {
         topic,
         duration_min: duration,
         is_published: published,
-        questions,
+        questions: questions.map((q) => ({
+          prompt: q.prompt,
+          options: q.options,
+          answer: q.answer,
+          prompt_en: q.prompt,
+          options_en: q.options,
+          prompt_hi: q.prompt_hi ?? q.prompt,
+          options_hi: q.options_hi ?? q.options,
+        })),
         created_by: userId!,
       };
       if (!online) {
@@ -102,6 +119,29 @@ function QuizCreator() {
       setQuestions([emptyQuestion()]);
       qc.invalidateQueries({ queryKey: ["quizzes"] });
       qc.invalidateQueries({ queryKey: ["sync_queue"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const generate = useMutation({
+    mutationFn: async () => {
+      if (!topic.trim()) throw new Error("Add a topic first so the AI knows what to write about");
+      return runGenerate({
+        data: { topic, subject, classLevel, language, difficulty },
+      });
+    },
+    onSuccess: (res) => {
+      setQuestions(
+        res.questions.map((q) => ({
+          prompt: q.prompt_en,
+          options: q.options_en,
+          answer: q.answer ?? 0,
+          prompt_hi: q.prompt_hi,
+          options_hi: q.options_hi,
+        })),
+      );
+      if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
+      toast.success(res.simulated ? "Generated 5 sample questions" : "AI generated 5 questions");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -163,6 +203,19 @@ function QuizCreator() {
               </div>
               <Switch checked={published} onCheckedChange={setPublished} />
             </div>
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={generate.isPending}
+              onClick={() => generate.mutate()}
+            >
+              {generate.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              AI Generate Quiz
+            </Button>
           </CardContent>
         </Card>
 
@@ -223,7 +276,7 @@ function QuizCreator() {
               </div>
             ))}
             <Button className="w-full" disabled={!valid || save.isPending} onClick={() => save.mutate()}>
-              {online ? "Save quiz" : "Save offline & queue for sync"}
+              {online ? "Save Quiz" : "Save offline & queue for sync"}
             </Button>
           </CardContent>
         </Card>

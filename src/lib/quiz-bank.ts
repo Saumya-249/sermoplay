@@ -580,6 +580,259 @@ function shuffleOptions(seed: Seed, r: () => number): BankQuestion {
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * Topic-driven generation — the typed Topic always wins
+ * ------------------------------------------------------------------ */
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u0900-\u097F ]+/g, " ").replace(/\s+/g, " ").trim();
+
+type TopicPack = { match: string[]; seeds: (r: () => number, language: string) => Seed[] };
+
+function factSeeds(facts: Fact[], language: string, r: () => number): Seed[] {
+  return pickMany(facts, 5, r).map((f) => factToSeed(f, language));
+}
+
+const FRACTION_FACTS: Fact[] = [
+  {
+    q: L("Which fraction is equivalent to 1/2?", "1/2 के बराबर कौन-सी भिन्न है?"),
+    o: { English: ["2/4", "1/3", "3/5", "2/6"], Hindi: ["2/4", "1/3", "3/5", "2/6"] },
+  },
+  {
+    q: L("A shape is divided into 4 equal parts and 3 are shaded. Which fraction is shaded?", "एक आकृति 4 बराबर भागों में बँटी है और 3 भाग रंगे हैं। रंगा हुआ भाग कौन-सी भिन्न है?"),
+    o: { English: ["3/4", "4/3", "1/4", "3/7"], Hindi: ["3/4", "4/3", "1/4", "3/7"] },
+  },
+  {
+    q: L("What is 1/4 + 1/4?", "1/4 + 1/4 कितना होता है?"),
+    o: { English: ["1/2", "2/8", "1/8", "2/4 of 2"], Hindi: ["1/2", "2/8", "1/8", "1/16"] },
+  },
+  {
+    q: L("Which of these is the largest fraction?", "इनमें से सबसे बड़ी भिन्न कौन-सी है?"),
+    o: { English: ["5/6", "2/3", "1/2", "3/8"], Hindi: ["5/6", "2/3", "1/2", "3/8"] },
+  },
+  {
+    q: L("Write the mixed number 2 1/3 as an improper fraction.", "मिश्रित संख्या 2 1/3 को विषम भिन्न में लिखिए।"),
+    o: { English: ["7/3", "6/3", "5/3", "2/3"], Hindi: ["7/3", "6/3", "5/3", "2/3"] },
+  },
+  {
+    q: L("What is 3/5 of 20?", "20 का 3/5 कितना होगा?"),
+    o: { English: ["12", "15", "10", "8"], Hindi: ["12", "15", "10", "8"] },
+  },
+  {
+    q: L("Which fraction is in its simplest form?", "इनमें से कौन-सी भिन्न सरलतम रूप में है?"),
+    o: { English: ["3/7", "4/8", "6/9", "10/20"], Hindi: ["3/7", "4/8", "6/9", "10/20"] },
+  },
+];
+
+const PHOTOSYNTHESIS_FACTS: Fact[] = [
+  {
+    q: L("Which green pigment in leaves traps sunlight for photosynthesis?", "पत्तियों में कौन-सा हरा वर्णक प्रकाश संश्लेषण के लिए सूर्य का प्रकाश ग्रहण करता है?"),
+    o: { English: ["Chlorophyll", "Haemoglobin", "Starch", "Carotene"], Hindi: ["क्लोरोफिल", "हीमोग्लोबिन", "स्टार्च", "कैरोटीन"] },
+  },
+  {
+    q: L("Which gas do plants take in during photosynthesis?", "प्रकाश संश्लेषण के दौरान पौधे कौन-सी गैस लेते हैं?"),
+    o: { English: ["Carbon dioxide", "Oxygen", "Nitrogen", "Hydrogen"], Hindi: ["कार्बन डाइऑक्साइड", "ऑक्सीजन", "नाइट्रोजन", "हाइड्रोजन"] },
+  },
+  {
+    q: L("Which gas is released by leaves during photosynthesis?", "प्रकाश संश्लेषण के दौरान पत्तियाँ कौन-सी गैस छोड़ती हैं?"),
+    o: { English: ["Oxygen", "Carbon dioxide", "Methane", "Water vapour"], Hindi: ["ऑक्सीजन", "कार्बन डाइऑक्साइड", "मीथेन", "जलवाष्प"] },
+  },
+  {
+    q: L("Which part of the plant carries out most photosynthesis?", "पौधे का कौन-सा भाग सबसे अधिक प्रकाश संश्लेषण करता है?"),
+    o: { English: ["Leaf", "Root", "Stem", "Flower"], Hindi: ["पत्ती", "जड़", "तना", "फूल"] },
+  },
+  {
+    q: L("What food is made by plants during photosynthesis?", "प्रकाश संश्लेषण में पौधे कौन-सा भोजन बनाते हैं?"),
+    o: { English: ["Glucose (sugar)", "Protein", "Vitamin C", "Salt"], Hindi: ["ग्लूकोज़ (शर्करा)", "प्रोटीन", "विटामिन C", "नमक"] },
+  },
+  {
+    q: L("Photosynthesis cannot happen without which of these?", "इनमें से किसके बिना प्रकाश संश्लेषण नहीं हो सकता?"),
+    o: { English: ["Sunlight", "Moonlight", "Soil colour", "Wind"], Hindi: ["सूर्य का प्रकाश", "चाँदनी", "मिट्टी का रंग", "हवा का बहाव"] },
+  },
+  {
+    q: L("Which part of the leaf lets gases enter and leave?", "पत्ती का कौन-सा भाग गैसों को अंदर-बाहर जाने देता है?"),
+    o: { English: ["Stomata", "Veins", "Petiole", "Cuticle"], Hindi: ["रंध्र (स्टोमेटा)", "शिराएँ", "वृंत", "क्यूटिकल"] },
+  },
+];
+
+const WATER_CYCLE_FACTS: Fact[] = [
+  {
+    q: L("What is the process by which water turns into vapour called?", "जल के वाष्प में बदलने की प्रक्रिया को क्या कहते हैं?"),
+    o: { English: ["Evaporation", "Condensation", "Precipitation", "Filtration"], Hindi: ["वाष्पीकरण", "संघनन", "वर्षण", "छानना"] },
+  },
+  {
+    q: L("Clouds are formed by which process?", "बादल किस प्रक्रिया से बनते हैं?"),
+    o: { English: ["Condensation", "Evaporation", "Erosion", "Melting"], Hindi: ["संघनन", "वाष्पीकरण", "अपरदन", "पिघलना"] },
+  },
+  {
+    q: L("Which source of energy drives the water cycle?", "जल चक्र किस ऊर्जा स्रोत से चलता है?"),
+    o: { English: ["The Sun", "The Moon", "Wind mills", "Rivers"], Hindi: ["सूर्य", "चंद्रमा", "पवनचक्की", "नदियाँ"] },
+  },
+  {
+    q: L("Rain, snow and hail are together called what?", "वर्षा, बर्फ़ और ओले को सामूहिक रूप से क्या कहते हैं?"),
+    o: { English: ["Precipitation", "Evaporation", "Transpiration", "Absorption"], Hindi: ["वर्षण", "वाष्पीकरण", "वाष्पोत्सर्जन", "अवशोषण"] },
+  },
+  {
+    q: L("Water released by plant leaves as vapour is called what?", "पौधों की पत्तियों से वाष्प के रूप में जल निकलने को क्या कहते हैं?"),
+    o: { English: ["Transpiration", "Respiration", "Germination", "Digestion"], Hindi: ["वाष्पोत्सर्जन", "श्वसन", "अंकुरण", "पाचन"] },
+  },
+];
+
+const MULTIPLICATION_TABLE_TOPIC = "multiplication";
+
+function multiplicationSeeds(r: () => number, language: string): Seed[] {
+  const en = MATH["English"]!;
+  const lc = MATH[language] ?? en;
+  return Array.from({ length: 5 }, () => {
+    const a = rndInt(r, 3, 12);
+    const b = rndInt(r, 3, 12);
+    const opts = numericOptions(a * b, 12, r);
+    return {
+      en: en.product(a, b),
+      loc: lc.product(a, b),
+      optionsEn: opts,
+      optionsLoc: opts,
+      correct: opts.indexOf(String(a * b)),
+    };
+  });
+}
+
+function additionSeeds(r: () => number, language: string): Seed[] {
+  const en = MATH["English"]!;
+  const lc = MATH[language] ?? en;
+  return Array.from({ length: 5 }, (_, i) => {
+    const a = rndInt(r, 40, 900);
+    const b = rndInt(r, 20, 700);
+    if (i % 2 === 1) {
+      const opts = numericOptions(a - b > 0 ? a - b : a, 25, r);
+      const target = a - b > 0 ? a - b : a;
+      return { en: en.diff(a, b), loc: lc.diff(a, b), optionsEn: opts, optionsLoc: opts, correct: opts.indexOf(String(target)) };
+    }
+    const opts = numericOptions(a + b, 30, r);
+    return { en: en.sum(a, b), loc: lc.sum(a, b), optionsEn: opts, optionsLoc: opts, correct: opts.indexOf(String(a + b)) };
+  });
+}
+
+function geometrySeeds(r: () => number, language: string): Seed[] {
+  const en = MATH["English"]!;
+  const lc = MATH[language] ?? en;
+  return Array.from({ length: 5 }, (_, i) => {
+    if (i % 2 === 0) {
+      const s = rndInt(r, 4, 18);
+      const opts = numericOptions(4 * s, 12, r);
+      return {
+        en: en.perimeter(s),
+        loc: lc.perimeter(s),
+        optionsEn: opts.map((v) => en.cm(Number(v))),
+        optionsLoc: opts.map((v) => lc.cm(Number(v))),
+        correct: opts.indexOf(String(4 * s)),
+      };
+    }
+    const l = rndInt(r, 4, 16);
+    const w = rndInt(r, 3, 14);
+    const opts = numericOptions(l * w, 15, r);
+    return {
+      en: en.area(l, w),
+      loc: lc.area(l, w),
+      optionsEn: opts.map((v) => en.sqcm(Number(v))),
+      optionsLoc: opts.map((v) => lc.sqcm(Number(v))),
+      correct: opts.indexOf(String(l * w)),
+    };
+  });
+}
+
+function moneySeeds(r: () => number, language: string): Seed[] {
+  const en = MATH["English"]!;
+  const lc = MATH[language] ?? en;
+  return Array.from({ length: 5 }, () => {
+    const rate = rndInt(r, 15, 95);
+    const kg = rndInt(r, 2, 9);
+    const total = rate * kg;
+    const opts = numericOptions(total, 30, r).map((v) => `₹${v}`);
+    return {
+      en: en.money(kg, rate),
+      loc: lc.money(kg, rate),
+      optionsEn: opts,
+      optionsLoc: opts,
+      correct: opts.indexOf(`₹${total}`),
+    };
+  });
+}
+
+const TOPIC_PACKS: TopicPack[] = [
+  { match: ["fraction", "भिन्न", "equivalent fraction", "mixed number"], seeds: (r, l) => factSeeds(FRACTION_FACTS, l, r) },
+  { match: ["photosynthesis", "प्रकाश संश्लेषण", "chlorophyll"], seeds: (r, l) => factSeeds(PHOTOSYNTHESIS_FACTS, l, r) },
+  { match: ["water cycle", "जल चक्र", "evaporation", "rain cycle"], seeds: (r, l) => factSeeds(WATER_CYCLE_FACTS, l, r) },
+  { match: [MULTIPLICATION_TABLE_TOPIC, "times table", "tables", "गुणा", "पहाड़ा"], seeds: multiplicationSeeds },
+  { match: ["addition", "subtraction", "add", "subtract", "जोड़", "घटा"], seeds: additionSeeds },
+  { match: ["geometry", "area", "perimeter", "shapes", "क्षेत्रफल", "परिमाप", "ज्यामिति"], seeds: geometrySeeds },
+  { match: ["money", "rupee", "currency", "मुद्रा", "रुपये", "पैसा"], seeds: moneySeeds },
+];
+
+/** Localized "about this exact topic" templates used for any custom topic. */
+const TOPIC_TEMPLATES: Record<string, (t: string) => string[]> = {
+  English: (t) => [
+    `Which of the following is a primary property of ${t}?`,
+    `Which statement best describes ${t}?`,
+    `Solve the following problem related to ${t}: which option is correct?`,
+    `Where would you most likely observe ${t} in daily life?`,
+    `Which of these is NOT related to ${t}?`,
+  ],
+  Hindi: (t) => [
+    `${t} की एक मुख्य विशेषता इनमें से कौन-सी है?`,
+    `${t} का सबसे सही वर्णन कौन-सा है?`,
+    `${t} से जुड़ी निम्न समस्या हल कीजिए — सही विकल्प कौन-सा है?`,
+    `दैनिक जीवन में ${t} कहाँ देखने को मिलता है?`,
+    `इनमें से कौन-सा ${t} से संबंधित नहीं है?`,
+  ],
+  Tamil: (t) => [
+    `${t} இன் முக்கியப் பண்பு எது?`,
+    `${t} ஐ சிறப்பாக விவரிக்கும் கூற்று எது?`,
+    `${t} தொடர்பான கீழ்க்கண்ட வினாவிற்கு சரியான விடை எது?`,
+    `அன்றாட வாழ்வில் ${t} எங்கே காணப்படும்?`,
+    `இவற்றில் ${t} உடன் தொடர்பில்லாதது எது?`,
+  ],
+};
+
+const TOPIC_OPTIONS: Record<string, (t: string) => string[][]> = {
+  English: (t) => [
+    [`It follows a definite rule that can be observed and measured`, `It changes randomly with no rule`, `It exists only in textbooks`, `It cannot be studied`],
+    [`A concept explained with clear examples and steps`, `A word with no meaning`, `A type of festival`, `A kind of musical note`],
+    [`Apply the correct rule of ${t} step by step`, `Guess an answer at random`, `Use a rule from an unrelated chapter`, `Leave the problem unsolved`],
+    [`In practical situations at home, school or the market`, `Only during examinations`, `Only inside a laboratory`, `Nowhere at all`],
+    [`A completely unrelated idea from another subject`, `Its basic definition`, `Its common examples`, `Its everyday uses`],
+  ],
+  Hindi: (t) => [
+    [`इसका एक निश्चित नियम होता है जिसे देखा और मापा जा सकता है`, `यह बिना नियम के बदलता रहता है`, `यह केवल पुस्तकों में मिलता है`, `इसका अध्ययन नहीं किया जा सकता`],
+    [`स्पष्ट उदाहरणों और चरणों से समझाई गई अवधारणा`, `बिना अर्थ का शब्द`, `एक प्रकार का त्योहार`, `एक संगीत स्वर`],
+    [`${t} के सही नियम को क्रमवार लागू कीजिए`, `अनुमान से उत्तर चुनिए`, `किसी असंबंधित अध्याय का नियम लगाइए`, `प्रश्न को अनसुलझा छोड़ दीजिए`],
+    [`घर, विद्यालय या बाज़ार की व्यावहारिक स्थितियों में`, `केवल परीक्षा के समय`, `केवल प्रयोगशाला में`, `कहीं भी नहीं`],
+    [`किसी अन्य विषय का पूर्णतः असंबंधित विचार`, `इसकी मूल परिभाषा`, `इसके सामान्य उदाहरण`, `इसके दैनिक उपयोग`],
+  ],
+};
+
+function customTopicSeeds(topic: string, language: string): Seed[] {
+  const t = topic.trim();
+  const enQ = TOPIC_TEMPLATES["English"]!(t);
+  const locQ = (TOPIC_TEMPLATES[language] ?? TOPIC_TEMPLATES["English"]!)(t);
+  const enO = TOPIC_OPTIONS["English"]!(t);
+  const locO = (TOPIC_OPTIONS[language] ?? TOPIC_OPTIONS["English"]!)(t);
+  return enQ.map((en, i) => ({
+    en,
+    loc: locQ[i] ?? en,
+    optionsEn: enO[i]!,
+    optionsLoc: locO[i] ?? enO[i]!,
+    correct: 0,
+  }));
+}
+
+/** Returns topic-specific seeds when the typed topic is recognised. */
+function topicSeeds(topic: string, language: string, r: () => number): Seed[] | null {
+  const key = norm(topic);
+  if (!key) return null;
+  const pack = TOPIC_PACKS.find((p) => p.match.some((m) => key.includes(norm(m)) || norm(m).includes(key)));
+  return pack ? pack.seeds(r, language) : null;
+}
+
 export function buildQuestions(args: {
   topic: string;
   subject: string;
@@ -590,6 +843,17 @@ export function buildQuestions(args: {
   const setIndex = args.set ?? 0;
   const r = mulberry32(Math.floor(Math.random() * 1e9) + setIndex * 7919);
   const lang = MATH[args.language] ? args.language : "English";
+
+  // 1. The typed topic always wins.
+  const fromTopic = topicSeeds(args.topic ?? "", lang, r);
+  if (fromTopic) return fromTopic.slice(0, 5).map((s) => shuffleOptions(s, r));
+
+  // 2. Any other custom topic: build questions that explicitly test that topic.
+  if ((args.topic ?? "").trim().length >= 3 && args.subject !== "Maths") {
+    return customTopicSeeds(args.topic, lang)
+      .slice(0, 5)
+      .map((s) => shuffleOptions(s, r));
+  }
 
   if (args.subject === "Maths") {
     return mathSeeds(args.classLevel, lang, r)

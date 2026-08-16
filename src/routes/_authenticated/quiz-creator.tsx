@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
@@ -19,9 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Sparkles, Loader2, RefreshCw } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { generateQuiz, type GeneratedQuestion } from "@/lib/quiz-ai.functions";
+import { Plus, Trash2, Sparkles, Loader2, RefreshCw, ChevronDown, Plug } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  fetchAIQuizQuestions,
+  AI_KEY_STORAGE,
+  AI_PROVIDER_STORAGE,
+  type AIProvider,
+} from "@/lib/ai-live";
 
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
   head: () => ({
@@ -53,7 +58,6 @@ const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], 
 function QuizCreator() {
   const { userId, online } = useApp();
   const qc = useQueryClient();
-  const runGenerate = useServerFn(generateQuiz);
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState<string>("English");
   const [subject, setSubject] = useState<string>("Maths");
@@ -67,6 +71,26 @@ function QuizCreator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [renderToken, setRenderToken] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(true);
+  const [apiKey, setApiKey] = useState("");
+  const [provider, setProvider] = useState<AIProvider>("gemini");
+
+  useEffect(() => {
+    const storedKey = localStorage.getItem(AI_KEY_STORAGE);
+    const storedProvider = localStorage.getItem(AI_PROVIDER_STORAGE) as AIProvider | null;
+    if (storedKey) setApiKey(storedKey);
+    if (storedProvider === "gemini" || storedProvider === "openai") setProvider(storedProvider);
+  }, []);
+
+  function updateApiKey(value: string) {
+    setApiKey(value);
+    localStorage.setItem(AI_KEY_STORAGE, value);
+  }
+
+  function updateProvider(value: AIProvider) {
+    setProvider(value);
+    localStorage.setItem(AI_PROVIDER_STORAGE, value);
+  }
 
   const myQuizzes = useQuery({
     queryKey: ["quizzes", userId],
@@ -130,50 +154,23 @@ function QuizCreator() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function applyGenerated(res: { questions: GeneratedQuestion[]; simulated: boolean }) {
-    const useLocal = language !== "English";
-    setQuestions(
-      res.questions.map((q) => {
-        const localPrompt = useLocal && q.prompt_hi?.trim() ? q.prompt_hi : q.prompt_en;
-        const localOptions =
-          useLocal && Array.isArray(q.options_hi) && q.options_hi.length === q.options_en.length
-            ? q.options_hi
-            : q.options_en;
-        return {
-          prompt: localPrompt,
-          options: localOptions,
-          answer: q.answer ?? 0,
-          prompt_hi: q.prompt_hi ?? localPrompt,
-          options_hi: q.options_hi ?? localOptions,
-          prompt_en: q.prompt_en,
-          options_en: q.options_en,
-        };
-      }),
-    );
-    if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
-    setRenderToken((n) => n + 1);
-  }
-
   /**
    * Single execution handler shared by both "AI Generate Quiz" and
-   * "Regenerate Questions". Reads live form state, calls the secure server
-   * endpoint (which falls back to the programmatic Academic Matrix when no
-   * AI key is available), then overwrites the Q1..Q5 state arrays.
+   * "Regenerate Questions". Reads live form state, calls the selected live AI
+   * provider directly with the teacher's own API key, then overwrites Q1..Q5.
    */
   async function handleQuestionGeneration(mode: "generate" | "regenerate") {
-    // 1. Read real-time form state
-    const payload = {
-      title,
-      topic: topic.trim(),
-      subject,
-      classLevel,
-      language,
-      difficulty,
-      set: mode === "regenerate" ? generationSet + 1 : 0,
-    };
-    console.log("[QuizCreator] generation payload", mode, payload);
+    const variant = mode === "regenerate" ? generationSet + 1 : 0;
+    const cleanTopic = topic.trim();
 
-    if (!payload.topic) {
+    if (!apiKey.trim()) {
+      setSettingsOpen(true);
+      toast.error(
+        "Please input your AI API Key in the AI Core Configuration drawer above to generate dynamic live questions.",
+      );
+      return;
+    }
+    if (!cleanTopic) {
       toast.error("Add a topic first so the generator knows what to write about");
       return;
     }
@@ -184,19 +181,27 @@ function QuizCreator() {
     setQuestions([]); // clear active questions before a fresh run
 
     try {
-      const res = await runGenerate({ data: payload });
-      console.log("[QuizCreator] generated questions", res.questions);
+      const live = await fetchAIQuizQuestions({
+        provider,
+        apiKey: apiKey.trim(),
+        subject,
+        topic: cleanTopic,
+        classLevel,
+        language,
+        difficulty,
+        variant,
+      });
       if (mode === "regenerate") setGenerationSet((n) => n + 1);
-      applyGenerated(res);
-      toast.success(
-        mode === "regenerate"
-          ? res.simulated
-            ? "Regenerated 5 sample questions"
-            : "Regenerated 5 fresh questions"
-          : res.simulated
-            ? "Generated 5 sample questions"
-            : "AI generated 5 questions",
+      setQuestions(
+        live.map((q) => ({
+          prompt: q.q,
+          options: [0, 1, 2, 3].map((i) => q.options[i] ?? ""),
+          answer: q.correct,
+        })),
       );
+      if (!title.trim()) setTitle(`${cleanTopic} — ${classLevel} ${subject} Quiz`);
+      setRenderToken((n) => n + 1);
+      toast.success(mode === "regenerate" ? "Regenerated 5 fresh AI questions" : "AI generated 5 questions");
     } catch (e) {
       console.error("[QuizCreator] generation failed", e);
       toast.error(e instanceof Error ? e.message : "Generation failed");
@@ -217,6 +222,58 @@ function QuizCreator() {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
+        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full text-left">
+                <CardHeader className="flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Plug className="size-4" /> 🔌 AI Core Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      {apiKey ? "API key saved on this device" : "Add your AI API key to generate live questions"}
+                    </CardDescription>
+                  </div>
+                  <ChevronDown
+                    className={`size-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                  />
+                </CardHeader>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="ai-key">AI API Key</Label>
+                  <Input
+                    id="ai-key"
+                    type="password"
+                    autoComplete="off"
+                    placeholder="Paste your provider API key"
+                    value={apiKey}
+                    onChange={(e) => updateApiKey(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Provider</Label>
+                  <Select value={provider} onValueChange={(v) => updateProvider(v as AIProvider)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gemini">Google Gemini</SelectItem>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  The key is stored only in this browser's local storage and is sent directly to the provider.
+                </p>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
         <Card>
           <CardHeader>
             <CardTitle>Create a quiz</CardTitle>
@@ -294,6 +351,14 @@ function QuizCreator() {
                 {isRegenerating ? "🔄 Regenerating fresh set..." : "🔄 Regenerate Questions"}
               </Button>
             </div>
+            {busy && (
+              <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/40 p-4">
+                <Loader2 className="size-5 animate-spin text-primary" />
+                <p className="text-sm font-medium">
+                  Trained AI is synthesizing dynamic regional-language questions...
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

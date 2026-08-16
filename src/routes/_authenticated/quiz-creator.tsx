@@ -54,7 +54,7 @@ type SubjectRow = { subject: string; topic: string };
 const QUESTION_COUNTS = ["5", "10", "15", "20"];
 
 function QuizCreator() {
-  const { userId, online } = useApp();
+  const { userId, online, queueQuiz } = useApp();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState<string>("English");
@@ -110,14 +110,7 @@ function QuizCreator() {
         created_by: userId!,
       };
       if (!online) {
-        const { error } = await supabase.from("sync_queue").insert({
-          user_id: userId!,
-          entity_type: "quiz",
-          entity_label: title,
-          action: "create",
-          payload,
-        });
-        if (error) throw error;
+        queueQuiz(title, payload);
         return "queued" as const;
       }
       const { error } = await supabase.from("quizzes").insert(payload);
@@ -125,7 +118,11 @@ function QuizCreator() {
       return "saved" as const;
     },
     onSuccess: (result) => {
-      toast.success(result === "queued" ? "Saved offline — queued for sync" : "Quiz published to your library");
+      toast.success(
+        result === "queued"
+          ? "Quiz saved locally to offline storage queue."
+          : "Quiz published to your library",
+      );
       setTitle("");
       setTopic("");
       setQuestions([emptyQuestion()]);

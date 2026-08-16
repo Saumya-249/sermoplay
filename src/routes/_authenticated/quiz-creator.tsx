@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
@@ -19,14 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Sparkles, Loader2, RefreshCw, ChevronDown, Plug } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-  fetchAIQuizQuestions,
-  AI_KEY_STORAGE,
-  AI_PROVIDER_STORAGE,
-  type AIProvider,
-} from "@/lib/ai-live";
+import { Plus, Trash2, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { generateLiveQuiz } from "@/lib/live-quiz.functions";
 
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
   head: () => ({
@@ -71,26 +66,7 @@ function QuizCreator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [renderToken, setRenderToken] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(true);
-  const [apiKey, setApiKey] = useState("");
-  const [provider, setProvider] = useState<AIProvider>("gemini");
-
-  useEffect(() => {
-    const storedKey = localStorage.getItem(AI_KEY_STORAGE);
-    const storedProvider = localStorage.getItem(AI_PROVIDER_STORAGE) as AIProvider | null;
-    if (storedKey) setApiKey(storedKey);
-    if (storedProvider === "gemini" || storedProvider === "openai") setProvider(storedProvider);
-  }, []);
-
-  function updateApiKey(value: string) {
-    setApiKey(value);
-    localStorage.setItem(AI_KEY_STORAGE, value);
-  }
-
-  function updateProvider(value: AIProvider) {
-    setProvider(value);
-    localStorage.setItem(AI_PROVIDER_STORAGE, value);
-  }
+  const runGeneration = useServerFn(generateLiveQuiz);
 
   const myQuizzes = useQuery({
     queryKey: ["quizzes", userId],
@@ -163,13 +139,6 @@ function QuizCreator() {
     const variant = mode === "regenerate" ? generationSet + 1 : 0;
     const cleanTopic = topic.trim();
 
-    if (!apiKey.trim()) {
-      setSettingsOpen(true);
-      toast.error(
-        "Please input your AI API Key in the AI Core Configuration drawer above to generate dynamic live questions.",
-      );
-      return;
-    }
     if (!cleanTopic) {
       toast.error("Add a topic first so the generator knows what to write about");
       return;
@@ -181,15 +150,15 @@ function QuizCreator() {
     setQuestions([]); // clear active questions before a fresh run
 
     try {
-      const live = await fetchAIQuizQuestions({
-        provider,
-        apiKey: apiKey.trim(),
-        subject,
-        topic: cleanTopic,
-        classLevel,
-        language,
-        difficulty,
-        variant,
+      const { questions: live } = await runGeneration({
+        data: {
+          subject,
+          topic: cleanTopic,
+          classLevel,
+          language,
+          difficulty,
+          variant,
+        },
       });
       if (mode === "regenerate") setGenerationSet((n) => n + 1);
       setQuestions(
@@ -222,58 +191,6 @@ function QuizCreator() {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <button type="button" className="w-full text-left">
-                <CardHeader className="flex-row items-center justify-between space-y-0">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Plug className="size-4" /> 🔌 AI Core Configuration
-                    </CardTitle>
-                    <CardDescription>
-                      {apiKey ? "API key saved on this device" : "Add your AI API key to generate live questions"}
-                    </CardDescription>
-                  </div>
-                  <ChevronDown
-                    className={`size-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
-                  />
-                </CardHeader>
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="ai-key">AI API Key</Label>
-                  <Input
-                    id="ai-key"
-                    type="password"
-                    autoComplete="off"
-                    placeholder="Paste your provider API key"
-                    value={apiKey}
-                    onChange={(e) => updateApiKey(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Provider</Label>
-                  <Select value={provider} onValueChange={(v) => updateProvider(v as AIProvider)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gemini">Google Gemini</SelectItem>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-xs text-muted-foreground sm:col-span-2">
-                  The key is stored only in this browser's local storage and is sent directly to the provider.
-                </p>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
         <Card>
           <CardHeader>
             <CardTitle>Create a quiz</CardTitle>
@@ -355,7 +272,7 @@ function QuizCreator() {
               <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/40 p-4">
                 <Loader2 className="size-5 animate-spin text-primary" />
                 <p className="text-sm font-medium">
-                  Trained AI is synthesizing dynamic regional-language questions...
+                  Trained AI is actively generating structured curriculum questions...
                 </p>
               </div>
             )}

@@ -159,11 +159,17 @@ function QuizCreator() {
 
   const generate = useMutation({
     mutationFn: async () => generateSet(0),
+    onMutate: () => {
+      setQuestions([]);
+    },
     onSuccess: (res) => {
       applyGenerated(res);
       toast.success(res.simulated ? "Generated 5 sample questions" : "AI generated 5 questions");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      setQuestions([emptyQuestion()]);
+    },
   });
 
   const regenerate = useMutation({
@@ -284,7 +290,7 @@ function QuizCreator() {
           </CardHeader>
           <CardContent className="space-y-5">
             {questions.map((q, i) => (
-              <div key={`${language}-${i}`} className="space-y-3 rounded-lg border p-3">
+              <div key={`${language}-${generationSet}-${i}`} className="space-y-3 rounded-lg border p-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">Q{i + 1}</Badge>
                   {questions.length > 1 && (

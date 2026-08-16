@@ -36,7 +36,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
             {
               role: "system",
               content:
-                "You write school quiz questions for Indian classrooms. You are fluent in Indian regional languages and always write the localized fields in that language's native script (Hindi = Devanagari), never transliterated English. Use ₹ for money. Always return strict JSON only.",
+                "You write school quiz questions for Indian classrooms. Write ONLY direct academic, curricular questions that test subject knowledge (calculations, facts, definitions, word problems). NEVER write meta-questions about study habits, opinions, skipping practice, or consequences of ignoring a topic. NEVER put the raw class name, subject name, or language name inside the question or option text. Options must be real values — numbers, measurements, or concrete factual phrases — never behavioural or conversational text like 'Avoiding the topic'. Maths = pure calculations, fractions, geometry or ₹ word problems. Science = direct natural/physical facts. You are fluent in Indian regional languages and always write the localized fields fully in that language's native script (Hindi = Devanagari), never transliterated or mixed English, and never template placeholders. Always return strict JSON only.",
             },
             {
               role: "user",

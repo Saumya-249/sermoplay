@@ -23,6 +23,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
   .inputValidator((data) => input.parse(data))
   .handler(async ({ data }): Promise<{ questions: GeneratedQuestion[]; simulated: boolean }> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
+    const variantNote = data.set > 0 ? ` This is alternative set ${data.set}; generate a different set of questions from any previous version.` : "";
     if (!apiKey) return { questions: buildQuestions(data), simulated: true };
 
     try {

@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { Download, Check, Search, Play } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cacheLibrarySection, cachedGames, cachedQuizzes } from "@/lib/offline-library";
 
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({
@@ -45,29 +46,34 @@ function LibraryPage() {
   const [search, setSearch] = useState("");
 
   const games = useQuery({
-    queryKey: ["games"],
+    queryKey: ["games", online],
     queryFn: async () => {
+      if (!online) return cachedGames() as never[];
       const { data, error } = await supabase.from("games").select("*").order("title");
       if (error) throw error;
+      cacheLibrarySection("games", data ?? []);
       return data;
     },
   });
 
   const quizzes = useQuery({
-    queryKey: ["library-quizzes"],
+    queryKey: ["library-quizzes", online],
     queryFn: async () => {
+      if (!online) return cachedQuizzes() as never[];
       const { data, error } = await supabase
         .from("quizzes")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
+      cacheLibrarySection("quizzes", data ?? []);
       return data;
     },
   });
 
   const downloads = useQuery({
-    queryKey: ["downloads", userId],
+    queryKey: ["downloads", userId, online],
     queryFn: async () => {
+      if (!online) return [] as never[];
       const { data, error } = await supabase.from("downloads").select("*");
       if (error) throw error;
       return data;
@@ -118,6 +124,12 @@ function LibraryPage() {
           {filtered.length} of {games.data?.length ?? 0} activities match your filters.
         </p>
       </div>
+
+      {!online && (
+        <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-800 dark:text-amber-300">
+          📦 Serving cached games from local offline memory
+        </div>
+      )}
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-4">

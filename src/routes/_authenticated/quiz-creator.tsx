@@ -64,6 +64,9 @@ function QuizCreator() {
   const [published, setPublished] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
   const [generationSet, setGenerationSet] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [renderToken, setRenderToken] = useState(0);
 
   const myQuizzes = useQuery({
     queryKey: ["quizzes", userId],
@@ -127,13 +130,6 @@ function QuizCreator() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function generateSet(setIndex: number) {
-    if (!topic.trim()) throw new Error("Add a topic first so the AI knows what to write about");
-    return runGenerate({
-      data: { topic, subject, classLevel, language, difficulty, set: setIndex },
-    });
-  }
-
   function applyGenerated(res: { questions: GeneratedQuestion[]; simulated: boolean }) {
     const useLocal = language !== "English";
     setQuestions(
@@ -155,45 +151,68 @@ function QuizCreator() {
       }),
     );
     if (!title.trim()) setTitle(`${topic} — ${classLevel} ${subject} Quiz`);
+    setRenderToken((n) => n + 1);
   }
 
-  const generate = useMutation({
-    mutationFn: async () => generateSet(0),
-    onMutate: () => {
-      setQuestions([]);
-    },
-    onSuccess: (res) => {
-      applyGenerated(res);
-      toast.success(res.simulated ? "Generated 5 sample questions" : "AI generated 5 questions");
-    },
-    onError: (e: Error) => {
-      toast.error(e.message);
-      setQuestions([emptyQuestion()]);
-    },
-  });
+  /**
+   * Single execution handler shared by both "AI Generate Quiz" and
+   * "Regenerate Questions". Reads live form state, calls the secure server
+   * endpoint (which falls back to the programmatic Academic Matrix when no
+   * AI key is available), then overwrites the Q1..Q5 state arrays.
+   */
+  async function handleQuestionGeneration(mode: "generate" | "regenerate") {
+    // 1. Read real-time form state
+    const payload = {
+      title,
+      topic: topic.trim(),
+      subject,
+      classLevel,
+      language,
+      difficulty,
+      set: mode === "regenerate" ? generationSet + 1 : 0,
+    };
+    console.log("[QuizCreator] generation payload", mode, payload);
 
-  const regenerate = useMutation({
-    mutationFn: async () => generateSet(generationSet + 1),
-    onMutate: () => {
-      setQuestions([]);
-    },
-    onSuccess: (res) => {
-      setGenerationSet((n) => n + 1);
+    if (!payload.topic) {
+      toast.error("Add a topic first so the generator knows what to write about");
+      return;
+    }
+    if (isGenerating || isRegenerating) return;
+
+    if (mode === "regenerate") setIsRegenerating(true);
+    else setIsGenerating(true);
+    setQuestions([]); // clear active questions before a fresh run
+
+    try {
+      const res = await runGenerate({ data: payload });
+      console.log("[QuizCreator] generated questions", res.questions);
+      if (mode === "regenerate") setGenerationSet((n) => n + 1);
       applyGenerated(res);
-      toast.success(res.simulated ? "Regenerated 5 sample questions" : "Regenerated 5 fresh questions");
-    },
-    onError: (e: Error) => {
-      toast.error(e.message);
+      toast.success(
+        mode === "regenerate"
+          ? res.simulated
+            ? "Regenerated 5 sample questions"
+            : "Regenerated 5 fresh questions"
+          : res.simulated
+            ? "Generated 5 sample questions"
+            : "AI generated 5 questions",
+      );
+    } catch (e) {
+      console.error("[QuizCreator] generation failed", e);
+      toast.error(e instanceof Error ? e.message : "Generation failed");
       setQuestions([emptyQuestion()]);
-    },
-  });
+    } finally {
+      setIsGenerating(false);
+      setIsRegenerating(false);
+    }
+  }
 
   function updateQuestion(i: number, patch: Partial<Question>) {
     setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
   }
 
   const valid = title.trim() !== "" && questions.every((q) => q.prompt.trim() !== "");
-  const busy = generate.isPending || regenerate.isPending;
+  const busy = isGenerating || isRegenerating;
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -251,28 +270,28 @@ function QuizCreator() {
                 size="lg"
                 className="flex-1"
                 disabled={busy}
-                onClick={() => generate.mutate()}
+                onClick={() => void handleQuestionGeneration("generate")}
               >
-                {generate.isPending ? (
+                {isGenerating ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <Sparkles className="size-4" />
                 )}
-                AI Generate Quiz
+                {isGenerating ? "Generating..." : "AI Generate Quiz"}
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="flex-1"
-                disabled={busy || questions.length === 0}
-                onClick={() => regenerate.mutate()}
+                disabled={busy}
+                onClick={() => void handleQuestionGeneration("regenerate")}
               >
-                {regenerate.isPending ? (
+                {isRegenerating ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <RefreshCw className="size-4" />
                 )}
-                {regenerate.isPending ? "Regenerating..." : "Regenerate Questions"}
+                {isRegenerating ? "🔄 Regenerating fresh set..." : "🔄 Regenerate Questions"}
               </Button>
             </div>
           </CardContent>
@@ -290,7 +309,7 @@ function QuizCreator() {
           </CardHeader>
           <CardContent className="space-y-5">
             {questions.map((q, i) => (
-              <div key={`${language}-${generationSet}-${i}`} className="space-y-3 rounded-lg border p-3">
+              <div key={`${language}-${generationSet}-${renderToken}-${i}`} className="space-y-3 rounded-lg border p-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">Q{i + 1}</Badge>
                   {questions.length > 1 && (

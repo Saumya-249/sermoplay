@@ -367,9 +367,13 @@ export function buildQuestions(args: {
   subject: string;
   classLevel: string;
   language: string;
+  set?: number;
 }): BankQuestion[] {
+  const setIndex = args.set ?? 0;
+  const key = `${args.language}|${args.subject}`;
   const seeds =
-    BANK[`${args.language}|${args.subject}`] ??
-    genericSeeds(args.subject, args.classLevel, args.language, args.topic);
+    setIndex === 0 && BANK[key]
+      ? BANK[key]
+      : genericSeeds(args.subject, args.classLevel, args.language, args.topic, setIndex);
   return seeds.slice(0, 5).map(shuffleOptions);
 }

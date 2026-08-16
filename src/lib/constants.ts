@@ -1,4 +1,5 @@
 export const LANGUAGES = [
+  "English",
   "Hindi",
   "Tamil",
   "Kannada",

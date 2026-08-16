@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
+import { Route as AuthenticatedLmsRouteImport } from './routes/_authenticated/lms'
 import { Route as AuthenticatedPrintablesRouteImport } from './routes/_authenticated/printables'
 import { Route as AuthenticatedQuizCreatorRouteImport } from './routes/_authenticated/quiz-creator'
 import { Route as AuthenticatedSyncRouteImport } from './routes/_authenticated/sync'
@@ -43,6 +44,11 @@ const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLmsRoute = AuthenticatedLmsRouteImport.update({
+  id: '/lms',
+  path: '/lms',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPrintablesRoute = AuthenticatedPrintablesRouteImport.update({
   id: '/printables',
   path: '/printables',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/library': typeof AuthenticatedLibraryRoute
+  '/lms': typeof AuthenticatedLmsRoute
   '/printables': typeof AuthenticatedPrintablesRoute
   '/quiz-creator': typeof AuthenticatedQuizCreatorRoute
   '/sync': typeof AuthenticatedSyncRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/library': typeof AuthenticatedLibraryRoute
+  '/lms': typeof AuthenticatedLmsRoute
   '/printables': typeof AuthenticatedPrintablesRoute
   '/quiz-creator': typeof AuthenticatedQuizCreatorRoute
   '/sync': typeof AuthenticatedSyncRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
+  '/_authenticated/lms': typeof AuthenticatedLmsRoute
   '/_authenticated/printables': typeof AuthenticatedPrintablesRoute
   '/_authenticated/quiz-creator': typeof AuthenticatedQuizCreatorRoute
   '/_authenticated/sync': typeof AuthenticatedSyncRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/library'
+    | '/lms'
     | '/printables'
     | '/quiz-creator'
     | '/sync'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/library'
+    | '/lms'
     | '/printables'
     | '/quiz-creator'
     | '/sync'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/library'
+    | '/_authenticated/lms'
     | '/_authenticated/printables'
     | '/_authenticated/quiz-creator'
     | '/_authenticated/sync'
@@ -174,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lms': {
+      id: '/_authenticated/lms'
+      path: '/lms'
+      fullPath: '/lms'
+      preLoaderRoute: typeof AuthenticatedLmsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/printables': {
       id: '/_authenticated/printables'
       path: '/printables'
@@ -208,6 +227,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
+  AuthenticatedLmsRoute: typeof AuthenticatedLmsRoute
   AuthenticatedPrintablesRoute: typeof AuthenticatedPrintablesRoute
   AuthenticatedQuizCreatorRoute: typeof AuthenticatedQuizCreatorRoute
   AuthenticatedSyncRoute: typeof AuthenticatedSyncRoute
@@ -217,6 +237,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
+  AuthenticatedLmsRoute: AuthenticatedLmsRoute,
   AuthenticatedPrintablesRoute: AuthenticatedPrintablesRoute,
   AuthenticatedQuizCreatorRoute: AuthenticatedQuizCreatorRoute,
   AuthenticatedSyncRoute: AuthenticatedSyncRoute,

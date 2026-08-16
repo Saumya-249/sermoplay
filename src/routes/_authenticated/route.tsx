@@ -25,6 +25,7 @@ import {
   FilePlus2,
   Printer,
   RefreshCw,
+  GraduationCap,
   LogOut,
   Wifi,
   WifiOff,
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/library", label: "Game Library", icon: Library },
+  { to: "/lms", label: "Offline LMS & Flashcards", icon: GraduationCap },
   { to: "/quiz-creator", label: "Quiz Creator", icon: FilePlus2 },
   { to: "/printables", label: "Printable Hub", icon: Printer },
   { to: "/sync", label: "Sync Panel", icon: RefreshCw },

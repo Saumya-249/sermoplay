@@ -50,6 +50,9 @@ type Question = {
 
 const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], answer: 0 });
 
+type SubjectRow = { subject: string; topic: string };
+const QUESTION_COUNTS = ["5", "10", "15", "20"];
+
 function QuizCreator() {
   const { userId, online } = useApp();
   const qc = useQueryClient();
@@ -59,6 +62,9 @@ function QuizCreator() {
   const [classLevel, setClassLevel] = useState<string>("Class 5");
   const [difficulty, setDifficulty] = useState<string>("Easy");
   const [topic, setTopic] = useState("");
+  const [questionCount, setQuestionCount] = useState(5);
+  const [quizMode, setQuizMode] = useState<"single" | "multi">("single");
+  const [subjectRows, setSubjectRows] = useState<SubjectRow[]>([{ subject: "Maths", topic: "" }]);
   const [duration, setDuration] = useState(10);
   const [published, setPublished] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
@@ -138,9 +144,16 @@ function QuizCreator() {
   async function handleQuestionGeneration(mode: "generate" | "regenerate") {
     const variant = mode === "regenerate" ? generationSet + 1 : 0;
     const cleanTopic = topic.trim();
+    const cleanRows = subjectRows
+      .map((r) => ({ subject: r.subject, topic: r.topic.trim() }))
+      .filter((r) => r.topic !== "");
 
-    if (!cleanTopic) {
+    if (quizMode === "single" && !cleanTopic) {
       toast.error("Add a topic first so the generator knows what to write about");
+      return;
+    }
+    if (quizMode === "multi" && cleanRows.length === 0) {
+      toast.error("Add at least one subject row with a topic");
       return;
     }
     if (isGenerating || isRegenerating) return;
@@ -152,25 +165,37 @@ function QuizCreator() {
     try {
       const { questions: live } = await runGeneration({
         data: {
-          subject,
-          topic: cleanTopic,
+          subject: quizMode === "multi" ? cleanRows[0]!.subject : subject,
+          topic: quizMode === "multi" ? cleanRows[0]!.topic : cleanTopic,
           classLevel,
           language,
           difficulty,
           variant,
+          count: questionCount,
+          mode: quizMode,
+          rows: cleanRows,
         },
       });
       if (mode === "regenerate") setGenerationSet((n) => n + 1);
-      setQuestions(
-        live.map((q) => ({
-          prompt: q.q,
-          options: [0, 1, 2, 3].map((i) => q.options[i] ?? ""),
-          answer: q.correct,
-        })),
-      );
-      if (!title.trim()) setTitle(`${cleanTopic} — ${classLevel} ${subject} Quiz`);
+      const mapped: Question[] = live.map((q) => ({
+        prompt: q.q,
+        options: [0, 1, 2, 3].map((i) => q.options[i] ?? ""),
+        answer: q.correct,
+      }));
+      while (mapped.length < questionCount) mapped.push(emptyQuestion());
+      setQuestions(mapped.slice(0, questionCount));
+      if (!title.trim())
+        setTitle(
+          quizMode === "multi"
+            ? `Multi-subject Quiz — ${classLevel}`
+            : `${cleanTopic} — ${classLevel} ${subject} Quiz`,
+        );
       setRenderToken((n) => n + 1);
-      toast.success(mode === "regenerate" ? "Regenerated 5 fresh AI questions" : "AI generated 5 questions");
+      toast.success(
+        mode === "regenerate"
+          ? `Regenerated ${questionCount} fresh AI questions`
+          : `AI generated ${questionCount} questions`,
+      );
     } catch (e) {
       console.error("[QuizCreator] generation failed", e);
       toast.error(e instanceof Error ? e.message : "Generation failed");
@@ -183,6 +208,15 @@ function QuizCreator() {
 
   function updateQuestion(i: number, patch: Partial<Question>) {
     setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
+  }
+
+  function setCount(n: number) {
+    setQuestionCount(n);
+    setQuestions((qs) => {
+      const next = qs.slice(0, n);
+      while (next.length < n) next.push(emptyQuestion());
+      return next;
+    });
   }
 
   const valid = title.trim() !== "" && questions.every((q) => q.prompt.trim() !== "");
@@ -207,21 +241,54 @@ function QuizCreator() {
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Number of Questions">
+                <Picker
+                  value={String(questionCount)}
+                  onChange={(v) => setCount(Number(v))}
+                  options={QUESTION_COUNTS}
+                />
+              </Field>
+              <Field label="Quiz Mode">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={quizMode === "single" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setQuizMode("single")}
+                  >
+                    Single Subject
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={quizMode === "multi" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setQuizMode("multi")}
+                  >
+                    Multi-Subject
+                  </Button>
+                </div>
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Language">
                 <Picker value={language} onChange={setLanguage} options={[...LANGUAGES]} />
               </Field>
-              <Field label="Subject">
-                <Picker value={subject} onChange={setSubject} options={[...SUBJECTS]} />
-              </Field>
+              {quizMode === "single" && (
+                <Field label="Subject">
+                  <Picker value={subject} onChange={setSubject} options={[...SUBJECTS]} />
+                </Field>
+              )}
               <Field label="Class">
                 <Picker value={classLevel} onChange={setClassLevel} options={[...CLASSES]} />
               </Field>
               <Field label="Difficulty">
                 <Picker value={difficulty} onChange={setDifficulty} options={[...DIFFICULTIES]} />
               </Field>
-              <Field label="Topic">
-                <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Addition & money" />
-              </Field>
+              {quizMode === "single" && (
+                <Field label="Topic">
+                  <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Addition & money" />
+                </Field>
+              )}
               <Field label="Duration (minutes)">
                 <Input
                   type="number"
@@ -232,6 +299,50 @@ function QuizCreator() {
                 />
               </Field>
             </div>
+            {quizMode === "multi" && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <p className="text-sm font-medium">Subjects & topics</p>
+                {subjectRows.map((row, i) => (
+                  <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="sm:w-44">
+                      <Picker
+                        value={row.subject}
+                        onChange={(v) =>
+                          setSubjectRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, subject: v } : r)))
+                        }
+                        options={[...SUBJECTS]}
+                      />
+                    </div>
+                    <Input
+                      className="flex-1"
+                      placeholder="Topic (e.g. Water Cycle)"
+                      value={row.topic}
+                      onChange={(e) =>
+                        setSubjectRows((rs) =>
+                          rs.map((r, idx) => (idx === i ? { ...r, topic: e.target.value } : r)),
+                        )
+                      }
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      aria-label={`Delete subject row ${i + 1}`}
+                      onClick={() => setSubjectRows((rs) => rs.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSubjectRows((rs) => [...rs, { subject: "Science", topic: "" }])}
+                >
+                  ➕ Add Subject Row
+                </Button>
+              </div>
+            )}
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
                 <p className="text-sm font-medium">Share with other teachers</p>

@@ -1,4 +1,4 @@
-import { buildQuizPrompt, type LiveQuestion } from "./ai-live";
+import { buildQuizPrompt, type LiveQuestion, type SubjectRow } from "./ai-live";
 
 export async function generateLiveQuestions(p: {
   subject: string;
@@ -7,7 +7,11 @@ export async function generateLiveQuestions(p: {
   language: string;
   difficulty: string;
   variant: number;
+  count?: number;
+  mode?: "single" | "multi";
+  rows?: SubjectRow[];
 }): Promise<LiveQuestion[]> {
+  const count = p.count ?? 5;
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured on this project.");
 
@@ -39,7 +43,7 @@ export async function generateLiveQuestions(p: {
 
   const questions = parsed
     .filter((x) => x && typeof x.q === "string" && Array.isArray(x.options) && x.options.length >= 2)
-    .slice(0, 5)
+    .slice(0, count)
     .map((x) => ({
       q: x.q,
       options: x.options.slice(0, 4).map(String),

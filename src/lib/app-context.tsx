@@ -28,7 +28,13 @@ type AppState = {
   syncNow: () => Promise<void>;
 };
 
-const AppCtx = createContext<AppState | null>(null);
+// Route code-splitting can evaluate this module more than once (main graph +
+// `?tsr-split=component` chunk). Keep a single context instance on globalThis
+// so provider and consumer always match.
+const g = globalThis as typeof globalThis & {
+  __rglbAppCtx?: React.Context<AppState | null>;
+};
+const AppCtx = (g.__rglbAppCtx ??= createContext<AppState | null>(null));
 
 export function AppProvider({
   userId,

@@ -15,7 +15,7 @@ export async function generateLiveQuestions(p: {
     method: "POST",
     headers: { "Lovable-API-Key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash",
+      model: "google/gemini-2.5-flash",
       messages: [
         {
           role: "system",

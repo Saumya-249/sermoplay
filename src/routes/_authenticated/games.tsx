@@ -52,7 +52,7 @@ function GamesHubPage() {
   const [classLevel, setClassLevel] = useState<string>("Class 3");
 
   const showBazaar = subject === "Math";
-  const crop = CROPS[classLevel] ?? CROPS["Class 3"];
+  const crop = CROPS[classLevel] ?? CROPS["Class 3"]!;
 
   return (
     <div className="space-y-6">
@@ -124,12 +124,12 @@ function Filter({
 /* ---------------- Game 1: Regional Bazaar Currency Counter ---------------- */
 
 function BazaarGame({ language, classLevel }: { language: GameLanguage; classLevel: string }) {
-  const items = BAZAAR_ITEMS[classLevel] ?? BAZAAR_ITEMS["Class 3"];
+  const items = BAZAAR_ITEMS[classLevel] ?? BAZAAR_ITEMS["Class 3"]!;
   const [itemIndex, setItemIndex] = useState(0);
   const [tokens, setTokens] = useState<{ id: number; value: number; kind: "coin" | "note" }[]>([]);
   const [won, setWon] = useState(false);
 
-  const item = items[Math.min(itemIndex, items.length - 1)];
+  const item = items[Math.min(itemIndex, items.length - 1)]!;
   const target = item.unitPrice * item.quantity;
   const currentTotal = tokens.reduce((s, t) => s + t.value, 0);
 

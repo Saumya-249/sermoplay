@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { enterGuestMode } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,15 +33,28 @@ const FEATURES = [
 ];
 
 function Index() {
+  const navigate = useNavigate();
   return (
     <div className="surface-paper min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <span className="flex items-center gap-2 font-semibold">
           <span className="text-2xl">📚</span> Game Library
         </span>
-        <Button asChild size="sm">
-          <Link to="/auth">Teacher sign in</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              enterGuestMode();
+              navigate({ to: "/dashboard" });
+            }}
+          >
+            ⚡ Continue as Guest
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/auth">Sign in</Link>
+          </Button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pb-24">

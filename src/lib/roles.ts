@@ -1,20 +1,5 @@
 export type AppRole = "student" | "teacher" | "admin";
 
-export const GUEST_KEY = "sermo-guest";
-
-export function isGuestMode(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(GUEST_KEY) === "true";
-}
-
-export function enterGuestMode() {
-  localStorage.setItem(GUEST_KEY, "true");
-}
-
-export function exitGuestMode() {
-  localStorage.removeItem(GUEST_KEY);
-}
-
 /** Which navigation destinations each role may reach. */
 export const ROLE_ROUTES: Record<AppRole, string[]> = {
   student: ["/dashboard", "/library", "/lms", "/games", "/challenges", "/leaderboard"],

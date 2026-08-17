@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { enterGuestMode, exitGuestMode, type AppRole } from "@/lib/roles";
+import { type AppRole } from "@/lib/roles";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Sign In | Sermo Play" },
       {
         property: "og:description",
-        content: "Sign in as student, teacher or administrator — or continue as guest to play offline games.",
+        content: "Sign in as student, teacher or administrator to access the Sermo Play workspace.",
       },
     ],
   }),
@@ -53,7 +54,6 @@ function AuthPage() {
       toast.error(error.message);
       return;
     }
-    exitGuestMode();
     navigate({ to: "/dashboard" });
   }
 
@@ -74,7 +74,6 @@ function AuthPage() {
   }
 
   async function google() {
-    exitGuestMode();
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
@@ -103,17 +102,15 @@ function AuthPage() {
     toast.success("Password reset link sent — check your inbox.");
   }
 
-  function continueAsGuest() {
-    enterGuestMode();
-    navigate({ to: "/dashboard" });
-  }
-
   return (
     <div className="surface-paper flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-6 block text-center text-sm text-muted-foreground hover:text-foreground">
-          ← Back to home
-        </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+            ← Back to home
+          </Link>
+          <ThemeToggle />
+        </div>
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 text-3xl">📚</div>
@@ -200,11 +197,8 @@ function AuthPage() {
             <Button variant="outline" className="w-full" onClick={google}>
               Continue with Google
             </Button>
-            <Button variant="secondary" className="mt-2 w-full" onClick={continueAsGuest}>
-              ⚡ Continue as Guest
-            </Button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Guests get a read-only student dashboard — browse and play the offline library without an account.
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              An account is required to open the workspace — sign in or register above.
             </p>
           </CardContent>
         </Card>

@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppProvider, useApp } from "@/lib/app-context";
 import { I18nProvider, useI18n, type I18nKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
-import { canAccess, exitGuestMode, isGuestMode, roleLabel, type AppRole } from "@/lib/roles";
+import { canAccess, roleLabel, type AppRole } from "@/lib/roles";
 import {
   LayoutDashboard,
   Library,
@@ -46,12 +46,7 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
-      if (isGuestMode()) {
-        return { user: null, role: "student" as AppRole, guest: true };
-      }
-      throw redirect({ to: "/auth" });
-    }
+    if (error || !data.user) throw redirect({ to: "/auth" });
     let role: AppRole = "student";
     const { data: roleRows } = await supabase
       .from("user_roles")
@@ -109,7 +104,6 @@ function Shell() {
   const activeKey = items.find((n) => n.to === pathname)?.key;
 
   async function handleLogout() {
-    exitGuestMode();
     await supabase.auth.signOut();
     localStorage.removeItem("sermo-lang");
     navigate({ to: "/auth", replace: true });
@@ -134,15 +128,6 @@ function Shell() {
             <Button variant="outline" size="sm" className="h-8 flex-1 gap-1" onClick={toggleLang}>
               <Languages className="size-3.5" />
               {lang === "en" ? "EN · अ" : "अ · EN"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1"
-              onClick={toggleTheme}
-              aria-label={t("theme")}
-            >
-              {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
             </Button>
           </div>
         </SidebarHeader>

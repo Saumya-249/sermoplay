@@ -136,6 +136,19 @@ function AuthPage() {
             <CardDescription>Students, teachers and administrators</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="space-y-2 pb-2">
+              <Label htmlFor="role-global">Select Your Profile Role</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+                <SelectTrigger id="role-global">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">🎒 Student</SelectItem>
+                  <SelectItem value="teacher">🧑‍🏫 Teacher</SelectItem>
+                  <SelectItem value="admin">🛡️ Administrator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Tabs defaultValue="signin">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
@@ -175,19 +188,75 @@ function AuthPage() {
                     <Label htmlFor="name">Full name</Label>
                     <Input id="name" value={name} required onChange={(e) => setName(e.target.value)} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">I am a</Label>
-                    <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-                      <SelectTrigger id="role">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">🎒 Student</SelectItem>
-                        <SelectItem value="teacher">🧑‍🏫 Teacher</SelectItem>
-                        <SelectItem value="admin">🛡️ Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {role === "student" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="grade">Grade level</Label>
+                        <Select value={grade} onValueChange={setGrade}>
+                          <SelectTrigger id="grade">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 8 }, (_, i) => `Class ${i + 1}`).map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="school">School name</Label>
+                        <Input id="school" value={school} required onChange={(e) => setSchool(e.target.value)} />
+                      </div>
+                    </>
+                  )}
+                  {role === "teacher" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="specialty">Assigned subject specialty</Label>
+                        <Input
+                          id="specialty"
+                          value={specialty}
+                          required
+                          placeholder="e.g. Mathematics"
+                          onChange={(e) => setSpecialty(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="empid">Employee ID</Label>
+                        <Input id="empid" value={employeeId} required onChange={(e) => setEmployeeId(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="school-t">School name</Label>
+                        <Input id="school-t" value={school} required onChange={(e) => setSchool(e.target.value)} />
+                      </div>
+                    </>
+                  )}
+                  {role === "admin" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="admincode">Institutional admin code</Label>
+                        <Input
+                          id="admincode"
+                          value={adminCode}
+                          required
+                          onChange={(e) => setAdminCode(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="mobile">Mobile number</Label>
+                        <Input
+                          id="mobile"
+                          type="tel"
+                          value={mobile}
+                          required
+                          pattern="[0-9+ ]{8,15}"
+                          onChange={(e) => setMobile(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="email2">Email</Label>
                     <Input id="email2" type="email" value={email} required onChange={(e) => setEmail(e.target.value)} />

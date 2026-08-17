@@ -1,5 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { generateLiveQuiz } from "@/lib/live-quiz.functions";
+import type { LiveQuestion } from "@/lib/ai-live";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,16 +15,17 @@ import { Download, Library, FilePlus2, Printer, RefreshCw, Sparkles, Loader2 } f
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sermo Play for Indian Classrooms" },
+      { title: "Sermo Play — Regional-Language Learning Ecosystem" },
       {
         name: "description",
         content:
-          "Offline-first library of regional-language educational games, quizzes and printable worksheets for teachers in low-connectivity schools.",
+          "Offline-first regional-language learning ecosystem connecting students, teachers and administrators with games, quizzes and printable worksheets.",
       },
-      { property: "og:title", content: "Sermo Play" },
+      { property: "og:title", content: "Sermo Play — Regional-Language Learning Ecosystem" },
       {
         property: "og:description",
-        content: "Offline-first library of regional-language educational games, quizzes and printable worksheets for teachers in low-connectivity schools.",
+        content:
+          "Connecting students, teachers and administrators offline-first with regional-language games, quizzes and worksheets.",
       },
     ],
   }),
@@ -29,7 +35,7 @@ export const Route = createFileRoute("/")({
 const FEATURES = [
   { icon: Download, title: "Download & teach offline", text: "Games stay on the device when the network drops." },
   { icon: Library, title: "Filter by language, subject, class", text: "Six regional languages, Class 1 to 8." },
-  { icon: FilePlus2, title: "Teacher quiz creator", text: "Build classroom quizzes without any coding." },
+  { icon: FilePlus2, title: "AI quiz creator", text: "Build curriculum quizzes without any coding." },
   { icon: Printer, title: "Game-to-worksheet printables", text: "Turn any game into a paper activity PDF." },
   { icon: RefreshCw, title: "Offline queue & cloud sync", text: "Results upload automatically when back online." },
 ];
@@ -57,15 +63,16 @@ function Index() {
             Smart India Hackathon 2026 prototype
           </Badge>
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
-            Regional-language classroom games that work without internet
+            Regional-Language Learning Ecosystem
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground md:text-lg">
-            A teacher-first library of games, quizzes and printable worksheets in Hindi, Tamil, Kannada, Bengali,
-            Marathi and Telugu — downloaded once, used offline, synced later.
+            Connecting students, teachers and administrators offline-first — games, quizzes, study guides and
+            printable worksheets in Hindi, Tamil, Kannada, Bengali, Marathi and Telugu, downloaded once, used
+            offline, synced later.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
-              <Link to="/auth">Open the teacher app</Link>
+              <Link to="/auth">Open the workspace</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link to="/auth">Create an account</Link>
@@ -94,39 +101,41 @@ function Index() {
   );
 }
 
-function mockPreview(topic: string) {
-  const clean = topic.trim() || "Fractions";
-  return [
-    {
-      q: `Which statement best describes ${clean}?`,
-      options: [`A core idea of ${clean}`, "An unrelated fact", "A random guess", "None of these"],
-      answer: 0,
-    },
-    {
-      q: `A class is studying ${clean}. Which example fits it?`,
-      options: ["A cooking recipe", `A classroom activity on ${clean}`, "A sports score", "A bus timetable"],
-      answer: 1,
-    },
-    {
-      q: `Why is ${clean} useful in everyday life?`,
-      options: ["It is never used", "Only in exams", `It helps solve real problems using ${clean}`, "It is decorative"],
-      answer: 2,
-    },
-  ];
-}
-
 function AiSandbox() {
   const [topic, setTopic] = useState("");
+  const [language, setLanguage] = useState("English");
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<ReturnType<typeof mockPreview> | null>(null);
+  const [preview, setPreview] = useState<LiveQuestion[] | null>(null);
+  const runGenerate = useServerFn(generateLiveQuiz);
 
-  function run(e: React.FormEvent) {
+  async function run(e: React.FormEvent) {
     e.preventDefault();
+    const clean = topic.trim();
+    if (!clean) {
+      toast.error("Type a topic first");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      setPreview(mockPreview(topic));
+    try {
+      const res = await runGenerate({
+        data: {
+          subject: "General",
+          topic: clean,
+          classLevel: "Class 6",
+          language,
+          difficulty: "Medium",
+          variant: 0,
+          count: 3,
+          mode: "single",
+          rows: [],
+        },
+      });
+      setPreview(res.questions);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Generation failed — please try again.");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   }
 
   return (
@@ -134,7 +143,7 @@ function AiSandbox() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">✨ Try Live AI Sandbox Demo</CardTitle>
         <CardDescription>
-          Type any topic and preview 3 sample questions instantly — no account needed.
+          Type any topic and get 3 real AI-generated curriculum questions instantly — no account needed.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -142,13 +151,22 @@ function AiSandbox() {
           <Input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g. Fractions, Water Cycle, Indian Democracy"
+            placeholder="e.g. Geometry, Human Reproduction, Water Cycle"
             className="min-w-0 flex-1"
             aria-label="Topic"
           />
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className="w-32" aria-label="Language">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="English">English</SelectItem>
+              <SelectItem value="Hindi">Hindi</SelectItem>
+            </SelectContent>
+          </Select>
           <Button type="submit" disabled={loading}>
             {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            Preview questions
+            {loading ? "Generating…" : "Preview questions"}
           </Button>
         </form>
 
@@ -164,7 +182,7 @@ function AiSandbox() {
                     <li
                       key={j}
                       className={
-                        j === item.answer
+                        j === item.correct
                           ? "rounded-md bg-primary/10 px-2 py-1 font-medium text-foreground"
                           : "px-2 py-1"
                       }
@@ -176,7 +194,7 @@ function AiSandbox() {
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              This is a demo preview. Sign in to generate full curriculum-aligned quizzes.
+              Live preview from the same AI engine the workspace uses. Sign in to generate full quizzes.
             </p>
           </div>
         )}

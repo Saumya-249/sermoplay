@@ -177,7 +177,7 @@ function Shell() {
           </Button>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="surface-paper w-full max-w-full overflow-x-hidden">
+      <SidebarInset className="surface-paper w-full min-w-0 max-w-full overflow-x-hidden">
         <div
           className={`flex w-full flex-wrap items-center justify-between gap-2 border-b px-4 py-2 text-sm ${
             online
@@ -242,9 +242,9 @@ function Shell() {
             </div>
           </div>
         </header>
-        <main className="w-full flex-1 px-4 py-4 md:px-6 md:py-6">
+        <div className="w-full min-w-0 flex-1 px-4 py-4 md:px-6 md:py-6">
           <Outlet />
-        </main>
+        </div>
       </SidebarInset>
     </>
   );

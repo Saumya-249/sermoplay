@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { AppProvider, useApp } from "@/lib/app-context";
 import { I18nProvider, useI18n, type I18nKey } from "@/lib/i18n";
+import { LANGUAGES } from "@/lib/i18n";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/lib/theme";
 import { canAccess, roleLabel, type AppRole } from "@/lib/roles";
 import {
@@ -97,9 +99,17 @@ function AppLayout() {
 function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const { user } = Route.useRouteContext();
   const { online, setOnline, userEmail, pendingQueue, syncing, role, guest } = useApp();
-  const { t, lang, toggleLang } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const { theme, toggleTheme } = useTheme();
+
+  const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+  const displayName =
+    (typeof meta["full_name"] === "string" && meta["full_name"]) ||
+    (typeof meta["name"] === "string" && meta["name"]) ||
+    (userEmail ? userEmail.split("@")[0] : "") ||
+    t("guest");
 
   const items = NAV.filter((n) => canAccess(role, n.to));
   const activeKey = items.find((n) => n.to === pathname)?.key;
@@ -119,17 +129,29 @@ function Shell() {
               📚
             </span>
             <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <p className="truncate text-sm font-semibold">{t("appName")}</p>
-              <p className="truncate text-xs text-sidebar-foreground/60">
+              <p className="truncate text-sm font-bold text-sidebar-foreground">{displayName}</p>
+              <p className="truncate text-xs font-medium text-sidebar-foreground/70">
                 {guest ? t("guest") : roleLabel(role)}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-            <Button variant="outline" size="sm" className="h-8 flex-1 gap-1" onClick={toggleLang}>
-              <Languages className="size-3.5" />
-              {lang === "en" ? "EN · अ" : "अ · EN"}
-            </Button>
+            <Select value={lang} onValueChange={(v) => setLang(v as typeof lang)}>
+              <SelectTrigger
+                aria-label={t("language")}
+                className="h-9 w-full gap-2 border border-sidebar-border bg-sidebar-accent/60 font-semibold text-sidebar-foreground [&>svg]:opacity-80"
+              >
+                <Languages className="size-4 shrink-0 text-sidebar-foreground" />
+                <SelectValue placeholder={t("language")} />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((l) => (
+                  <SelectItem key={l.code} value={l.code}>
+                    {l.short} · {l.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </SidebarHeader>
         <SidebarContent>

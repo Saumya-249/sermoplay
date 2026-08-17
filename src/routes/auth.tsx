@@ -7,21 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { enterGuestMode, exitGuestMode, type AppRole } from "@/lib/roles";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Teacher Sign In | Sermo Play" },
+      { title: "Sign In | Sermo Play" },
       {
         name: "description",
         content:
-          "Sign in to download regional-language classroom games, build quizzes and sync offline classroom records.",
+          "Sign in as student, teacher or administrator to download regional-language classroom games, build quizzes and sync offline records.",
       },
-      { property: "og:title", content: "Teacher Sign In | Sermo Play" },
+      { property: "og:title", content: "Sign In | Sermo Play" },
       {
         property: "og:description",
-        content: "Sign in to download regional-language classroom games, build quizzes and sync offline classroom records.",
+        content: "Sign in as student, teacher or administrator — or continue as guest to play offline games.",
       },
     ],
   }),
@@ -33,6 +35,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [role, setRole] = useState<AppRole>("student");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -50,6 +53,7 @@ function AuthPage() {
       toast.error(error.message);
       return;
     }
+    exitGuestMode();
     navigate({ to: "/dashboard" });
   }
 
@@ -59,25 +63,48 @@ function AuthPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name }, emailRedirectTo: window.location.origin },
+      options: { data: { name, role }, emailRedirectTo: window.location.origin },
     });
     setLoading(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success("Account created. You can sign in now.");
+    toast.success("Account created. Check your email to confirm, then sign in.");
   }
 
   async function google() {
+    exitGuestMode();
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
-      toast.error("Google sign-in failed");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) toast.error("Google sign-in failed");
       return;
     }
     if (result.redirected) return;
+    navigate({ to: "/dashboard" });
+  }
+
+  async function forgotPassword() {
+    const target = window.prompt("Enter your account email to receive a reset link", email);
+    if (!target) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(target, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Password reset link sent — check your inbox.");
+  }
+
+  function continueAsGuest() {
+    enterGuestMode();
     navigate({ to: "/dashboard" });
   }
 
@@ -90,8 +117,8 @@ function AuthPage() {
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 text-3xl">📚</div>
-            <CardTitle className="text-2xl">Teacher access</CardTitle>
-            <CardDescription>Regional-Language Game Library</CardDescription>
+            <CardTitle className="text-2xl">Sermo Play access</CardTitle>
+            <CardDescription>Students, teachers and administrators</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin">
@@ -118,6 +145,13 @@ function AuthPage() {
                   <Button type="submit" className="w-full" disabled={loading}>
                     Sign in
                   </Button>
+                  <button
+                    type="button"
+                    onClick={forgotPassword}
+                    className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    🔒 Forgot Password?
+                  </button>
                 </form>
               </TabsContent>
               <TabsContent value="signup">
@@ -125,6 +159,19 @@ function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="name">Full name</Label>
                     <Input id="name" value={name} required onChange={(e) => setName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">I am a</Label>
+                    <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+                      <SelectTrigger id="role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">🎒 Student</SelectItem>
+                        <SelectItem value="teacher">🧑‍🏫 Teacher</SelectItem>
+                        <SelectItem value="admin">🛡️ Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email2">Email</Label>
@@ -153,6 +200,12 @@ function AuthPage() {
             <Button variant="outline" className="w-full" onClick={google}>
               Continue with Google
             </Button>
+            <Button variant="secondary" className="mt-2 w-full" onClick={continueAsGuest}>
+              ⚡ Continue as Guest
+            </Button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Guests get a read-only student dashboard — browse and play the offline library without an account.
+            </p>
           </CardContent>
         </Card>
       </div>

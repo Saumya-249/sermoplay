@@ -6,7 +6,11 @@ const QUICK_LINKS = [
   { label: "Curriculum", hash: "curriculum" },
 ];
 
-const HUBS = ["Student Hub", "Teacher Workspace", "Admin Console"];
+const HUBS = [
+  { label: "Student Hub", role: "student" as const },
+  { label: "Teacher Workspace", role: "teacher" as const },
+  { label: "Admin Console", role: "admin" as const },
+];
 
 export function SiteFooter() {
   return (
@@ -35,7 +39,16 @@ export function SiteFooter() {
           <h2 className="text-sm font-semibold text-foreground">Platform Hubs</h2>
           <ul className="mt-2 space-y-1 text-sm">
             {HUBS.map((h) => (
-              <li key={h}>{h}</li>
+              <li key={h.label}>
+                <Link
+                  to="/auth"
+                  search={{ role: h.role }}
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="transition-colors hover:text-foreground"
+                >
+                  {h.label}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>

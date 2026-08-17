@@ -39,7 +39,13 @@ export const SUBJECT_HI: Record<string, string> = {
   Accountancy: "लेखाशास्त्र",
 };
 
-type Chapters = { en: string[]; hi: string[] };
+type Chapters = {
+  en: string[];
+  hi: string[];
+  /** Optional parallel sub-topic lists, indexed like `en`/`hi`. */
+  subEn?: string[][];
+  subHi?: string[][];
+};
 
 /** key: `${class}|${subject}` */
 const SYLLABUS: Record<string, Chapters> = {
@@ -58,6 +64,14 @@ const SYLLABUS: Record<string, Chapters> = {
       "Statistics",
       "Probability",
     ],
+    subEn: [
+      ["Euclid's Division Lemma", "Fundamental Theorem of Arithmetic", "Irrationality Proofs"],
+      ["Geometrical Meaning of Zeroes", "Relationship between Zeroes & Coefficients"],
+    ],
+    subHi: [
+      ["यूक्लिड विभाजन प्रमेयिका", "अंकगणित की आधारभूत प्रमेय", "अपरिमेय संख्याओं की उपपत्ति"],
+      ["शून्यकों का ज्यामितीय अर्थ", "शून्यकों और गुणांकों के बीच संबंध"],
+    ],
     hi: [
       "वास्तविक संख्याएँ",
       "बहुपद",
@@ -71,6 +85,22 @@ const SYLLABUS: Record<string, Chapters> = {
       "पृष्ठीय क्षेत्रफल और आयतन",
       "सांख्यिकी",
       "प्रायिकता",
+    ],
+  },
+  "11|Mathematics": {
+    en: ["Sets & Functions", "Trigonometric Functions", "Linear Inequalities", "Coordinate Geometry"],
+    hi: ["समुच्चय एवं फलन", "त्रिकोणमितीय फलन", "रैखिक असमिकाएँ", "निर्देशांक ज्यामिति"],
+    subEn: [
+      ["Types of Sets", "Venn Diagrams", "Subset Relations", "Domain and Range"],
+      ["Positive & Negative Angles", "Trigonometric Identities", "General Solutions"],
+      ["Algebraic Solutions", "Graphical Representations on Number Lines"],
+      ["Straight Lines Equations", "Conic Sections (Circle, Parabola, Ellipse)"],
+    ],
+    subHi: [
+      ["समुच्चयों के प्रकार", "वेन आरेख", "उपसमुच्चय संबंध", "प्रांत और परिसर"],
+      ["धनात्मक एवं ऋणात्मक कोण", "त्रिकोणमितीय सर्वसमिकाएँ", "व्यापक हल"],
+      ["बीजगणितीय हल", "संख्या रेखा पर आलेखीय निरूपण"],
+      ["सरल रेखा के समीकरण", "शंकु परिच्छेद (वृत्त, परवलय, दीर्घवृत्त)"],
     ],
   },
   "5|Environmental Studies (EVS)": {
@@ -98,6 +128,8 @@ const SYLLABUS: Record<string, Chapters> = {
       "चढ़ाई ऊपर की",
       "दीवारों की कहानियाँ",
     ],
+    subEn: [["How animals see, hear, and smell", "Amazing sense of sight in birds", "Tiger protection"]],
+    subHi: [["जानवर कैसे देखते, सुनते और सूँघते हैं", "पक्षियों की अद्भुत दृष्टि", "बाघ संरक्षण"]],
   },
   "9|Science": {
     en: [
@@ -197,4 +229,30 @@ export function getSyllabus(classLevel: number, subject: string, language: Explo
 
 export function isCurated(classLevel: number, subject: string) {
   return Boolean(SYLLABUS[`${classLevel}|${subject}`]);
+}
+
+/** Sub-topics for a chapter; falls back to an algorithmic 3-point breakdown. */
+export function getSubtopics(
+  classLevel: number,
+  subject: string,
+  chapterIndex: number,
+  chapterTitle: string,
+  language: ExplorerLanguage,
+): string[] {
+  const curated = SYLLABUS[`${classLevel}|${subject}`];
+  const list = language === "Hindi" ? curated?.subHi : curated?.subEn;
+  const found = list?.[chapterIndex];
+  if (found && found.length) return found;
+
+  return language === "Hindi"
+    ? [
+        `${chapterTitle} की मूल अवधारणाएँ एवं परिभाषाएँ`,
+        "व्यावहारिक अनुप्रयोग एवं हल किए गए उदाहरण",
+        "एन.सी.ई.आर.टी. अभ्यास प्रश्न एवं अभ्यास क्विज़",
+      ]
+    : [
+        `Core Concepts & Definitions of ${chapterTitle}`,
+        "Practical Application & Solved Examples",
+        "NCERT Exercise Problems & Practice Quiz Links",
+      ];
 }

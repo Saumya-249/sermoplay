@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { Download, Library, FilePlus2, Printer, RefreshCw, Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -42,25 +43,14 @@ const FEATURES = [
 
 function Index() {
   return (
-    <div className="surface-paper min-h-screen">
-      <header className="sticky top-0 z-20 w-full border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3 md:px-6">
-        <span className="flex items-center gap-2 font-semibold">
-          <span className="text-2xl">📚</span> Sermo Play
-        </span>
-        <div className="flex flex-wrap items-center gap-2">
-          <ThemeToggle className="size-8" />
-          <Button asChild size="sm">
-            <Link to="/auth">Sign in</Link>
-          </Button>
-        </div>
-        </div>
-      </header>
+    <div className="surface-paper flex min-h-screen flex-col">
+      <span id="top" />
+      <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 pb-24">
+      <main className="mx-auto w-full max-w-6xl px-6 pb-24">
         <section className="py-14 text-center md:py-20">
           <Badge variant="secondary" className="mb-4">
-            Smart India Hackathon 2026 prototype
+            ✨ Empowering Minds in Every Tongue, Learning Everywhere Offline-First
           </Badge>
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
             Regional-Language Learning Ecosystem
@@ -80,7 +70,7 @@ function Index() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section id="features" className="scroll-mt-24 grid gap-4 md:grid-cols-3">
           {FEATURES.map((f) => (
             <Card key={f.title}>
               <CardContent className="pt-6">
@@ -93,10 +83,15 @@ function Index() {
         </section>
 
         <section className="mt-14 grid gap-6 lg:grid-cols-2">
-          <AiSandbox />
-          <CurriculumExplorer />
+          <div id="ai-sandbox" className="scroll-mt-24">
+            <AiSandbox />
+          </div>
+          <div id="curriculum" className="scroll-mt-24">
+            <CurriculumExplorer />
+          </div>
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }

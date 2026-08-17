@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { CurriculumExplorer } from "@/components/curriculum-explorer";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Download, Library, FilePlus2, Printer, RefreshCw, Sparkles, Loader2 } from "lucide-react";
@@ -206,53 +207,6 @@ function AiSandbox() {
             </p>
           </div>
         )}
-      </CardContent>
-    </Card>
-  );
-}
-
-const EXPLORER_LANGUAGES = ["English", "हिंदी (Hindi)"];
-const EXPLORER_SUBJECTS = ["Math", "Science", "Social Science"];
-const EXPLORER_CLASSES = Array.from({ length: 8 }, (_, i) => `Class ${i + 1}`);
-
-function CurriculumExplorer() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">📚 Public Curriculum Explorer</CardTitle>
-        <CardDescription>Everything Sermo Play covers today — read-only, open to all.</CardDescription>
-      </CardHeader>
-      <CardContent className="max-h-80 space-y-5 overflow-y-auto pr-1">
-        <div>
-          <h3 className="text-sm font-semibold">Languages</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {EXPLORER_LANGUAGES.map((l) => (
-              <Badge key={l} variant="secondary">
-                {l}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold">Subjects</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {EXPLORER_SUBJECTS.map((s) => (
-              <Badge key={s} variant="outline">
-                {s}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold">Class levels</h3>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {EXPLORER_CLASSES.map((c) => (
-              <div key={c} className="rounded-md border bg-card px-2 py-2 text-center text-xs font-medium">
-                {c}
-              </div>
-            ))}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

@@ -230,6 +230,7 @@ function Shell() {
         <div className="w-full min-w-0 flex-1 px-4 py-4 md:px-6 md:py-6">
           <Outlet />
         </div>
+        <SiteFooter />
       </SidebarInset>
     </>
   );

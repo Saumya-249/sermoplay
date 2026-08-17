@@ -14,6 +14,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { role?: AppRole } => {
+    const raw = typeof search["role"] === "string" ? (search["role"] as string).toLowerCase() : "";
+    const map: Record<string, AppRole> = {
+      student: "student",
+      teacher: "teacher",
+      admin: "admin",
+      administrator: "admin",
+    };
+    return map[raw] ? { role: map[raw] } : {};
+  },
   head: () => ({
     meta: [
       { title: "Sign In | Sermo Play" },
@@ -34,10 +44,11 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { role: roleParam } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<AppRole>("student");
+  const [role, setRole] = useState<AppRole>(roleParam ?? "student");
   const [loading, setLoading] = useState(false);
   const [grade, setGrade] = useState("Class 1");
   const [school, setSchool] = useState("");
@@ -45,6 +56,11 @@ function AuthPage() {
   const [employeeId, setEmployeeId] = useState("");
   const [adminCode, setAdminCode] = useState("");
   const [mobile, setMobile] = useState("");
+
+  useEffect(() => {
+    if (roleParam) setRole(roleParam);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [roleParam]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

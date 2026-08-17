@@ -24,7 +24,7 @@ export function buildQuizPrompt(p: {
 
   return `Act as an expert primary and secondary school curriculum text designer. ${scope} Class: ${p.classLevel}, Language: ${p.language}. Difficulty: ${p.difficulty}. Questions must be non-repetitive.
 
-Write every question and every option fully in ${p.language} using its native script (Hindi = Devanagari). Ask only direct academic curriculum questions about the requested topic(s) — never study habits, opinions, or meta questions, and never mention the class, subject, or language names inside the text.${p.variant > 0 ? ` This is alternative set ${p.variant}; produce a completely different set from previous ones.` : ""}
+Write every question and every option fully in ${p.language} using its native script (Hindi = Devanagari). Ask only direct, factual, grade-appropriate academic curriculum questions about the requested topic(s) — never study habits, opinions, or meta questions, and never mention the class, subject, or language names inside the text. Forbid all conversational meta-text or text about classroom activities (e.g. never generate questions like "A class is studying...", "Why is X useful in everyday life?", or "Which statement best describes X?").${p.variant > 0 ? ` This is alternative set ${p.variant}; produce a completely different set from previous ones.` : ""}
 
 STRICT RULE: Return ONLY a raw, valid JSON array of exactly ${count} objects. Do not include any conversational text, markdown formatting, or '\`\`\`json' code blocks. The structural JSON layout must strictly be:
 [

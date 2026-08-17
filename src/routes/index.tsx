@@ -68,6 +68,19 @@ function Index() {
               <Link to="/auth">Create an account</Link>
             </Button>
           </div>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <Button asChild variant="secondary">
+              <Link to="/leaderboard">📊 View Live Leaderboard</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link to="/lms">💡 Browse Flashcards</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link to="/" hash="ai-sandbox">
+                🛠️ Interactive Sandbox
+              </Link>
+            </Button>
+          </div>
         </section>
 
         <section id="features" className="scroll-mt-24 grid gap-4 md:grid-cols-3">

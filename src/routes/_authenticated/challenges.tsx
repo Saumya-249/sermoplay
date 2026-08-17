@@ -200,16 +200,16 @@ function SpeedAddition({ hi }: { hi: boolean }) {
   useEffect(() => {
     if (done && score > 0) {
       saveOfflineScore({
-        id: `speed-addition-${Date.now()}`,
-        quizId: "speed-addition",
-        title: "Speed Addition Race",
+        quizId: "speed-addition-race",
+        quizTitle: "Speed Addition Race",
         score,
-        total: score,
         correct: score,
+        total: score,
+        lang: hi ? "hi" : "en",
         completedAt: new Date().toISOString(),
-      } as never);
+      });
     }
-  }, [done, score]);
+  }, [done, score, hi]);
 
   return (
     <>

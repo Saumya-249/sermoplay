@@ -59,7 +59,7 @@ function Dashboard() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat icon={<Gamepad2 className="size-4" />} label={t("totalGames")} value={String(games.length)} />
         <Stat icon={<Play className="size-4" />} label={t("playableQuestions")} value={String(totalQuestions)} />
         <Stat
@@ -76,11 +76,11 @@ function Dashboard() {
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+        <Card className="min-w-0 lg:col-span-2">
           <CardHeader>
             <CardTitle>{t("readyOffline")}</CardTitle>
-            <CardDescription>{t("readyOfflineSub")}</CardDescription>
+            <CardDescription className="text-balance">{t("readyOfflineSub")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {games.slice(0, 6).map((g) => (
@@ -108,7 +108,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle>{t("syncStatus")}</CardTitle>
             <CardDescription>{online ? t("connectedCloud") : t("workingOffline")}</CardDescription>

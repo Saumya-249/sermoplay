@@ -2,15 +2,17 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronDown } from "lucide-react";
 import {
   EXPLORER_CLASSES,
   SUBJECT_HI,
   getSyllabus,
+  getSubtopics,
   isCurated,
   subjectsForClass,
   type ExplorerLanguage,
 } from "@/lib/ncert-syllabus";
+import { cn } from "@/lib/utils";
 
 const LANGUAGES: { value: ExplorerLanguage; label: string }[] = [
   { value: "English", label: "English" },
@@ -24,6 +26,7 @@ export function CurriculumExplorer() {
   const [classLevel, setClassLevel] = useState<number | null>(null);
   const [subject, setSubject] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [openChapter, setOpenChapter] = useState<number | null>(null);
 
   const subjects = useMemo(() => (classLevel ? subjectsForClass(classLevel) : []), [classLevel]);
   const ready = Boolean(language && classLevel && subject);
@@ -33,11 +36,13 @@ export function CurriculumExplorer() {
     setClassLevel(c);
     setSubject(null);
     setResult(null);
+    setOpenChapter(null);
   }
 
   function show() {
     if (!language || !classLevel || !subject) return;
     setResult(null);
+    setOpenChapter(null);
     setResult({ classLevel, subject, language, chapters: getSyllabus(classLevel, subject, language) });
   }
 
@@ -133,17 +138,47 @@ export function CurriculumExplorer() {
               {result.language === "Hindi" ? "पाठ्यक्रम — अध्याय सूची" : "Prescribed syllabus — chapter index"}
             </h4>
             <ol className="mt-3 grid gap-2 sm:grid-cols-2">
-              {result.chapters.map((ch, i) => (
-                <li
-                  key={ch}
-                  className="flex items-start gap-2 rounded-lg border bg-card px-3 py-2 text-sm"
-                >
-                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
-                    {i + 1}
-                  </span>
-                  <span className="leading-snug">{ch}</span>
-                </li>
-              ))}
+              {result.chapters.map((ch, i) => {
+                const open = openChapter === i;
+                return (
+                  <li key={ch} className="rounded-lg border bg-card text-sm">
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => setOpenChapter(open ? null : i)}
+                      className="flex w-full items-start gap-2 px-3 py-2 text-left"
+                    >
+                      <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1 leading-snug text-card-foreground">{ch}</span>
+                      <ChevronDown
+                        className={cn(
+                          "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
+                          open && "rotate-180",
+                        )}
+                      />
+                    </button>
+                    <div
+                      className={cn(
+                        "grid transition-all duration-300 ease-out",
+                        open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                      )}
+                    >
+                      <div className="overflow-hidden">
+                        <ul className="mx-3 mb-3 space-y-1 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
+                          {getSubtopics(result.classLevel, result.subject, i, ch, result.language).map((s) => (
+                            <li key={s} className="flex gap-2 leading-snug">
+                              <span className="text-primary">•</span>
+                              <span>{s}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </section>
         )}

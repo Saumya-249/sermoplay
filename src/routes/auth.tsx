@@ -121,8 +121,8 @@ function AuthPage() {
   }
 
   return (
-    <div className="surface-paper flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
+    <div className="surface-paper flex min-h-screen flex-col">
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
             ← Back to home
@@ -290,6 +290,7 @@ function AuthPage() {
           </CardContent>
         </Card>
       </div>
+      <SiteFooter />
     </div>
   );
 }

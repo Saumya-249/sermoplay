@@ -9,6 +9,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { AppRole } from "@/lib/roles";
 import {
   clearPendingQueue,
   enqueuePendingQuiz,
@@ -22,6 +23,8 @@ type AppState = {
   setOnline: (v: boolean) => void;
   userId: string | null;
   userEmail: string | null;
+  role: AppRole;
+  guest: boolean;
   pendingQueue: PendingQuiz[];
   queueQuiz: (title: string, payload: Record<string, unknown>) => void;
   syncing: boolean;
@@ -39,10 +42,14 @@ const AppCtx = (g.__rglbAppCtx ??= createContext<AppState | null>(null));
 export function AppProvider({
   userId,
   userEmail,
+  role = "teacher",
+  guest = false,
   children,
 }: {
   userId: string | null;
   userEmail: string | null;
+  role?: AppRole;
+  guest?: boolean;
   children: ReactNode;
 }) {
   const [online, setOnlineState] = useState(true);
@@ -88,8 +95,8 @@ export function AppProvider({
   }, []);
 
   const value = useMemo<AppState>(
-    () => ({ online, setOnline, userId, userEmail, pendingQueue, queueQuiz, syncing, syncNow }),
-    [online, setOnline, userId, userEmail, pendingQueue, queueQuiz, syncing, syncNow],
+    () => ({ online, setOnline, userId, userEmail, role, guest, pendingQueue, queueQuiz, syncing, syncNow }),
+    [online, setOnline, userId, userEmail, role, guest, pendingQueue, queueQuiz, syncing, syncNow],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

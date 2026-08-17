@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
+import { useI18n } from "@/lib/i18n";
+import { canAccess, roleLabel } from "@/lib/roles";
 import { WORKING_GAME_LIBRARY } from "@/lib/working-games";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,11 +26,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
-  const { userId, online } = useApp();
+  const { userId, online, role, guest } = useApp();
+  const { t } = useI18n();
+  const showSync = canAccess(role, "/sync");
   const games = WORKING_GAME_LIBRARY;
 
   const pending = useQuery({
     queryKey: ["sync_queue", userId],
+    enabled: Boolean(userId) && showSync,
     queryFn: async () => {
       const { data, error } = await supabase.from("sync_queue").select("*").eq("status", "pending");
       if (error) throw error;
@@ -43,32 +48,39 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Namaste, teacher 👋</h1>
-        <p className="text-sm text-muted-foreground">
-          Download once, teach anywhere — even without internet.
-        </p>
+        <h1 className="text-2xl font-bold">
+          {t("greeting")} {guest ? t("guest") : roleLabel(role)}
+        </h1>
+        <p className="text-sm text-muted-foreground">{t("greetingSub")}</p>
+        {guest && (
+          <p className="mt-2 inline-block rounded-md bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">
+            {t("guestBanner")}
+          </p>
+        )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={<Gamepad2 className="size-4" />} label="Total games available" value={String(games.length)} />
-        <Stat icon={<Play className="size-4" />} label="Playable questions" value={String(totalQuestions)} />
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat icon={<Gamepad2 className="size-4" />} label={t("totalGames")} value={String(games.length)} />
+        <Stat icon={<Play className="size-4" />} label={t("playableQuestions")} value={String(totalQuestions)} />
         <Stat
           icon={<HardDrive className="size-4" />}
-          label="Local storage used"
+          label={t("storageUsed")}
           value={`${storageUsed.toFixed(1)} MB`}
         />
-        <Stat
-          icon={<CloudUpload className="size-4" />}
-          label="Pending sync items"
-          value={String(pending.data?.length ?? 0)}
-        />
+        {showSync && (
+          <Stat
+            icon={<CloudUpload className="size-4" />}
+            label={t("pendingItems")}
+            value={String(pending.data?.length ?? 0)}
+          />
+        )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+        <Card className="min-w-0 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Ready to play offline</CardTitle>
-            <CardDescription>Every game is bundled on this device — tap play to start instantly.</CardDescription>
+            <CardTitle>{t("readyOffline")}</CardTitle>
+            <CardDescription className="text-balance">{t("readyOfflineSub")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {games.slice(0, 6).map((g) => (
@@ -85,26 +97,26 @@ function Dashboard() {
                   </div>
                   <Button size="sm" asChild>
                     <Link to="/quiz/$id" params={{ id: g.id }}>
-                      <Play className="size-4" /> Play
+                      <Play className="size-4" /> {t("play")}
                     </Link>
                   </Button>
                 </div>
             ))}
             <Button asChild variant="outline" className="w-full">
-              <Link to="/library">Browse full library</Link>
+              <Link to="/library">{t("browseLibrary")}</Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
-            <CardTitle>Offline sync status</CardTitle>
-            <CardDescription>{online ? "Connected to cloud" : "Working offline"}</CardDescription>
+            <CardTitle>{t("syncStatus")}</CardTitle>
+            <CardDescription>{online ? t("connectedCloud") : t("workingOffline")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                <span>Device storage</span>
+                <span>{t("deviceStorage")}</span>
                 <span>
                   {storageUsed.toFixed(1)} / {quota} MB
                 </span>
@@ -112,14 +124,16 @@ function Dashboard() {
               <Progress value={(storageUsed / quota) * 100} />
             </div>
             <div className="rounded-lg border p-3 text-sm">
-              <p className="font-medium">{pending.data?.length ?? 0} records queued</p>
+              <p className="font-medium">{pending.data?.length ?? 0} {t("recordsQueued")}</p>
               <p className="text-xs text-muted-foreground">
                 Scores, quizzes and downloads recorded offline upload automatically once connectivity returns.
               </p>
             </div>
-            <Button asChild variant="secondary" className="w-full">
-              <Link to="/sync">Open sync panel</Link>
-            </Button>
+            {showSync && (
+              <Button asChild variant="secondary" className="w-full">
+                <Link to="/sync">{t("openSyncPanel")}</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

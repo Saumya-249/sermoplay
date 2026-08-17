@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateLiveQuiz } from "@/lib/live-quiz.functions";
 
 export const Route = createFileRoute("/_authenticated/quiz-creator")({
+  beforeLoad: ({ context }) => {
+    const role = (context as { role?: string }).role;
+    if (role !== "teacher" && role !== "admin") throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: "Quiz Creator | Sermo Play" },

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,10 @@ import { cachedQuizzes, cacheLibrarySection } from "@/lib/offline-library";
 import { useApp } from "@/lib/app-context";
 
 export const Route = createFileRoute("/_authenticated/printables")({
+  beforeLoad: ({ context }) => {
+    const role = (context as { role?: string }).role;
+    if (role !== "teacher" && role !== "admin") throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: "Printable Hub | Sermo Play" },

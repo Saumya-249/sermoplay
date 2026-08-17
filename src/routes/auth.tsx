@@ -38,6 +38,12 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [role, setRole] = useState<AppRole>("student");
   const [loading, setLoading] = useState(false);
+  const [grade, setGrade] = useState("Class 1");
+  const [school, setSchool] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [adminCode, setAdminCode] = useState("");
+  const [mobile, setMobile] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -60,10 +66,22 @@ function AuthPage() {
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    const metadata: Record<string, string> = { name, role };
+    if (role === "student") {
+      metadata['grade_level'] = grade;
+      metadata['school'] = school;
+    } else if (role === "teacher") {
+      metadata['subject_specialty'] = specialty;
+      metadata['employee_id'] = employeeId;
+      metadata['school'] = school;
+    } else {
+      metadata['admin_code'] = adminCode;
+      metadata['mobile'] = mobile;
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, role }, emailRedirectTo: window.location.origin },
+      options: { data: metadata, emailRedirectTo: window.location.origin },
     });
     setLoading(false);
     if (error) {

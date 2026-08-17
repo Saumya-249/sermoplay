@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/site-footer";
 import { createFileRoute, Outlet, redirect, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {

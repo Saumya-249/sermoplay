@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedChallengesRouteImport } from './routes/_authenticated/challenges'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
@@ -40,6 +41,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedChallengesRoute = AuthenticatedChallengesRouteImport.update({
+  id: '/challenges',
+  path: '/challenges',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/challenges': typeof AuthenticatedChallengesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/games': typeof AuthenticatedGamesRoute
   '/library': typeof AuthenticatedLibraryRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/challenges': typeof AuthenticatedChallengesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/games': typeof AuthenticatedGamesRoute
   '/library': typeof AuthenticatedLibraryRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/challenges': typeof AuthenticatedChallengesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/games': typeof AuthenticatedGamesRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/challenges'
     | '/dashboard'
     | '/games'
     | '/library'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/challenges'
     | '/dashboard'
     | '/games'
     | '/library'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/challenges'
     | '/_authenticated/dashboard'
     | '/_authenticated/games'
     | '/_authenticated/library'
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/challenges': {
+      id: '/_authenticated/challenges'
+      path: '/challenges'
+      fullPath: '/challenges'
+      preLoaderRoute: typeof AuthenticatedChallengesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -264,6 +283,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedChallengesRoute: typeof AuthenticatedChallengesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRoute
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
@@ -275,6 +295,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedChallengesRoute: AuthenticatedChallengesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRoute,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,

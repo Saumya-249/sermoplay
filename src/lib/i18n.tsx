@@ -10,6 +10,7 @@ import {
 
 import { MODULE_DICTS, MODULE_EN } from "@/lib/i18n-modules";
 import { LMS_DICTS, LMS_EN } from "@/lib/i18n-lms";
+import { VIEW_DICTS, VIEW_EN } from "@/lib/i18n-views";
 
 export type UiLang = "en" | "hi" | "ta" | "kn" | "bn" | "mr" | "te";
 
@@ -114,7 +115,7 @@ const EN = {
   nextCard: "Next Card",
 } as const;
 
-const EN_ALL = { ...EN, ...MODULE_EN, ...LMS_EN };
+const EN_ALL = { ...EN, ...MODULE_EN, ...LMS_EN, ...VIEW_EN };
 
 export type I18nKey = keyof typeof EN_ALL;
 
@@ -490,12 +491,12 @@ const TE: PartialDict = {
 
 const DICTS: Record<UiLang, PartialDict> = {
   en: EN_ALL,
-  hi: { ...HI, ...MODULE_DICTS.hi, ...LMS_DICTS.hi },
-  ta: { ...TA, ...MODULE_DICTS.ta, ...LMS_DICTS.ta },
-  kn: { ...KN, ...MODULE_DICTS.kn, ...LMS_DICTS.kn },
-  bn: { ...BN, ...MODULE_DICTS.bn, ...LMS_DICTS.bn },
-  mr: { ...MR, ...MODULE_DICTS.mr, ...LMS_DICTS.mr },
-  te: { ...TE, ...MODULE_DICTS.te, ...LMS_DICTS.te },
+  hi: { ...HI, ...MODULE_DICTS.hi, ...LMS_DICTS.hi, ...VIEW_DICTS.hi },
+  ta: { ...TA, ...MODULE_DICTS.ta, ...LMS_DICTS.ta, ...VIEW_DICTS.ta },
+  kn: { ...KN, ...MODULE_DICTS.kn, ...LMS_DICTS.kn, ...VIEW_DICTS.kn },
+  bn: { ...BN, ...MODULE_DICTS.bn, ...LMS_DICTS.bn, ...VIEW_DICTS.bn },
+  mr: { ...MR, ...MODULE_DICTS.mr, ...LMS_DICTS.mr, ...VIEW_DICTS.mr },
+  te: { ...TE, ...MODULE_DICTS.te, ...LMS_DICTS.te, ...VIEW_DICTS.te },
 };
 
 

@@ -2,6 +2,10 @@ import type { UiLang } from "@/lib/i18n";
 
 /** School & Learning Management Panel (Administrator) dictionary. */
 export const ADMIN_EN = {
+  adNavStudents: "Student Performance Registry",
+  adNavTeachers: "Teacher Workload Overview",
+  adNavCurriculum: "School Curriculum & Logs",
+
   adTitle: "School & Learning Management Panel",
   adSubtitle: "Academic performance, curriculum coverage and staff workload across the whole school.",
   adOffline: "Offline — showing the last cached school snapshot",
@@ -85,6 +89,10 @@ export const ADMIN_EN = {
 export type AdminDict = Partial<Record<keyof typeof ADMIN_EN, string>>;
 
 const hi: AdminDict = {
+  adNavStudents: "विद्यार्थी प्रदर्शन रजिस्ट्री",
+  adNavTeachers: "शिक्षक कार्यभार अवलोकन",
+  adNavCurriculum: "विद्यालय पाठ्यक्रम एवं लॉग",
+
   adTitle: "विद्यालय एवं शिक्षण प्रबंधन पैनल",
   adSubtitle: "पूरे विद्यालय का शैक्षणिक प्रदर्शन, पाठ्यक्रम कवरेज और शिक्षक कार्यभार।",
   adOffline: "ऑफ़लाइन — अंतिम सहेजा गया विद्यालय स्नैपशॉट",
@@ -156,6 +164,10 @@ const hi: AdminDict = {
 };
 
 const ta: AdminDict = {
+  adNavStudents: "மாணவர் செயல்திறன் பதிவேடு",
+  adNavTeachers: "ஆசிரியர் பணிச்சுமை மேலோட்டம்",
+  adNavCurriculum: "பள்ளி பாடத்திட்டம் & பதிவுகள்",
+
   adTitle: "பள்ளி மற்றும் கற்றல் மேலாண்மை பலகை",
   adSubtitle: "பள்ளி முழுவதற்குமான கல்வித் திறன், பாடத்திட்ட பரவல் மற்றும் ஆசிரியர் பணிச்சுமை.",
   adOffline: "ஆஃப்லைன் — கடைசியாக சேமித்த பள்ளி நிலைப்படம்",
@@ -227,6 +239,10 @@ const ta: AdminDict = {
 };
 
 const kn: AdminDict = {
+  adNavStudents: "ವಿದ್ಯಾರ್ಥಿ ಸಾಧನೆ ನೋಂದಣಿ",
+  adNavTeachers: "ಶಿಕ್ಷಕ ಕಾರ್ಯಭಾರ ಅವಲೋಕನ",
+  adNavCurriculum: "ಶಾಲಾ ಪಠ್ಯಕ್ರಮ ಮತ್ತು ಲಾಗ್‌ಗಳು",
+
   adTitle: "ಶಾಲೆ ಮತ್ತು ಕಲಿಕಾ ನಿರ್ವಹಣಾ ಫಲಕ",
   adSubtitle: "ಇಡೀ ಶಾಲೆಯ ಶೈಕ್ಷಣಿಕ ಸಾಧನೆ, ಪಠ್ಯಕ್ರಮ ವ್ಯಾಪ್ತಿ ಮತ್ತು ಶಿಕ್ಷಕರ ಕಾರ್ಯಭಾರ.",
   adOffline: "ಆಫ್‌ಲೈನ್ — ಕೊನೆಯ ಸಂಗ್ರಹಿತ ಶಾಲಾ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್",
@@ -298,6 +314,10 @@ const kn: AdminDict = {
 };
 
 const bn: AdminDict = {
+  adNavStudents: "শিক্ষার্থী পারফরম্যান্স রেজিস্ট্রি",
+  adNavTeachers: "শিক্ষক কাজের চাপ পর্যালোচনা",
+  adNavCurriculum: "বিদ্যালয় পাঠ্যক্রম ও লগ",
+
   adTitle: "বিদ্যালয় ও শিক্ষণ ব্যবস্থাপনা প্যানেল",
   adSubtitle: "সমগ্র বিদ্যালয়ের শিক্ষাগত ফলাফল, পাঠ্যক্রম কভারেজ ও শিক্ষকের কাজের চাপ।",
   adOffline: "অফলাইন — সর্বশেষ সংরক্ষিত বিদ্যালয় স্ন্যাপশট",
@@ -369,6 +389,10 @@ const bn: AdminDict = {
 };
 
 const mr: AdminDict = {
+  adNavStudents: "विद्यार्थी कामगिरी नोंदवही",
+  adNavTeachers: "शिक्षक कार्यभार आढावा",
+  adNavCurriculum: "शाळा अभ्यासक्रम व नोंदी",
+
   adTitle: "शाळा व शिक्षण व्यवस्थापन पॅनेल",
   adSubtitle: "संपूर्ण शाळेची शैक्षणिक कामगिरी, अभ्यासक्रम व्याप्ती व शिक्षक कार्यभार.",
   adOffline: "ऑफलाइन — शेवटचा साठवलेला शाळेचा स्नॅपशॉट",
@@ -440,6 +464,10 @@ const mr: AdminDict = {
 };
 
 const te: AdminDict = {
+  adNavStudents: "విద్యార్థి పనితీరు రిజిస్ట్రీ",
+  adNavTeachers: "ఉపాధ్యాయ పనిభార అవలోకనం",
+  adNavCurriculum: "పాఠశాల పాఠ్యప్రణాళిక & లాగ్‌లు",
+
   adTitle: "పాఠశాల & అభ్యాస నిర్వహణ ప్యానెల్",
   adSubtitle: "పాఠశాల మొత్తం విద్యా ప్రదర్శన, పాఠ్యాంశ కవరేజ్ మరియు ఉపాధ్యాయ పనిభారం.",
   adOffline: "ఆఫ్‌లైన్ — చివరిగా భద్రపరిచిన పాఠశాల స్నాప్‌షాట్",

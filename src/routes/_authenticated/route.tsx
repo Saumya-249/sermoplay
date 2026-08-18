@@ -13,6 +13,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
@@ -83,6 +86,12 @@ const NAV: { to: string; key: I18nKey; icon: typeof LayoutDashboard }[] = [
   { to: "/printables", key: "printables", icon: Printer },
   { to: "/sync", key: "sync", icon: RefreshCw },
   { to: "/admin", key: "admin", icon: ShieldCheck },
+];
+
+const ADMIN_SUBNAV: { hash: string; key: I18nKey; emoji: string }[] = [
+  { hash: "students", key: "adNavStudents", emoji: "👥" },
+  { hash: "teachers", key: "adNavTeachers", emoji: "👩‍🏫" },
+  { hash: "curriculum", key: "adNavCurriculum", emoji: "📋" },
 ];
 
 function AppLayout() {
@@ -175,6 +184,20 @@ function Shell() {
                         )}
                       </Link>
                     </SidebarMenuButton>
+                    {item.to === "/admin" && role === "admin" && (
+                      <SidebarMenuSub className="group-data-[collapsible=icon]:hidden">
+                        {ADMIN_SUBNAV.map((sub) => (
+                          <SidebarMenuSubItem key={sub.hash}>
+                            <SidebarMenuSubButton asChild>
+                              <Link to="/admin" hash={sub.hash}>
+                                <span aria-hidden>{sub.emoji}</span>
+                                <span className="truncate">{t(sub.key)}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

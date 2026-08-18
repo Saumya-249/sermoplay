@@ -184,6 +184,20 @@ function Shell() {
                         )}
                       </Link>
                     </SidebarMenuButton>
+                    {item.to === "/admin" && role === "admin" && (
+                      <SidebarMenuSub className="group-data-[collapsible=icon]:hidden">
+                        {ADMIN_SUBNAV.map((sub) => (
+                          <SidebarMenuSubItem key={sub.hash}>
+                            <SidebarMenuSubButton asChild>
+                              <Link to="/admin" hash={sub.hash}>
+                                <span aria-hidden>{sub.emoji}</span>
+                                <span className="truncate">{t(sub.key)}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

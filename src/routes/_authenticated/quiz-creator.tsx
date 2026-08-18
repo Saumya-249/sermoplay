@@ -57,11 +57,26 @@ const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], 
 type SubjectRow = { subject: string; topic: string };
 const QUESTION_COUNTS = ["5", "10", "15", "20"];
 
+const UI_LANG_TO_NAME: Record<UiLang, string> = {
+  en: "English",
+  hi: "Hindi",
+  ta: "Tamil",
+  kn: "Kannada",
+  bn: "Bengali",
+  mr: "Marathi",
+  te: "Telugu",
+};
+
 function QuizCreator() {
   const { userId, online, queueQuiz } = useApp();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
-  const [language, setLanguage] = useState<string>("English");
+  const { lang: uiLang } = useI18n();
+  const [language, setLanguage] = useState<string>(UI_LANG_TO_NAME[uiLang] ?? "English");
+  // Quiz Creator language always mirrors the global workspace language.
+  useEffect(() => {
+    setLanguage(UI_LANG_TO_NAME[uiLang] ?? "English");
+  }, [uiLang]);
   const [subject, setSubject] = useState<string>("Maths");
   const [classLevel, setClassLevel] = useState<string>("Class 5");
   const [difficulty, setDifficulty] = useState<string>("Easy");

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CelebrationSplash, playRewardSound } from "@/components/games/celebration";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type UiLang } from "@/lib/i18n";
+import { challengeText, gameText } from "@/lib/challenge-i18n";
 import { saveOfflineScore } from "@/lib/quiz-local";
 import { useApp } from "@/lib/app-context";
 import { logGameSession } from "@/lib/telemetry";
@@ -70,7 +71,8 @@ function useCountdown(running: boolean, onEnd: () => void) {
   return left;
 }
 
-function Clock({ left, hi }: { left: number; hi: boolean }) {
+function Clock({ left, lang }: { left: number; lang: UiLang }) {
+  const ct = challengeText(lang);
   const pct = (left / ROUND_SECONDS) * 100;
   return (
     <div className="w-full">
@@ -79,7 +81,7 @@ function Clock({ left, hi }: { left: number; hi: boolean }) {
           <Timer className="size-4" /> {left}s
         </span>
         <span className={left <= 10 ? "text-destructive" : "text-muted-foreground"}>
-          {left <= 10 ? (hi ? "⏰ जल्दी!" : "⏰ Hurry!") : hi ? "60 सेकंड" : "60s round"}
+          {left <= 10 ? ct("hurry") : ct("roundBadge")}
         </span>
       </div>
       <Progress value={pct} className={left <= 10 ? "[&>div]:bg-destructive" : ""} />
@@ -91,23 +93,21 @@ function Clock({ left, hi }: { left: number; hi: boolean }) {
 
 function ChallengesPage() {
   const { lang } = useI18n();
-  const hi = lang === "hi";
+  const ct = challengeText(lang);
   const [active, setActive] = useState<ChallengeGame | null>(null);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{hi ? "⏱️ समयबद्ध चुनौतियाँ" : "⏱️ Timed Challenge Games"}</h1>
-        <p className="text-sm text-muted-foreground">
-          {hi
-            ? "एक खेल चुनें और 60 सेकंड की दौड़ शुरू करें — प्रश्न हर बार नए बनते हैं।"
-            : "Pick a game to unfold its dashboard — every launch streams a fresh, randomised question set."}
-        </p>
+        <h1 className="text-2xl font-bold">{ct("pageTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{ct("pageSub")}</p>
       </div>
 
       {active === null ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {CHALLENGE_GAMES.map((g) => (
+          {CHALLENGE_GAMES.map((g) => {
+            const gt = gameText(g.key, lang, { title: g.title, desc: g.desc, badge: g.badge });
+            return (
             <Card key={g.key} className="flex flex-col transition-shadow hover:shadow-md">
               <CardHeader className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -115,33 +115,34 @@ function ChallengesPage() {
                     {g.emoji}
                   </span>
                   <Badge variant="secondary" className="shrink-0 text-[11px]">
-                    {hi ? g.badgeHi : g.badge}
+                    {gt.badge}
                   </Badge>
                 </div>
-                <CardTitle className="text-base">{hi ? g.titleHi : g.title}</CardTitle>
-                <CardDescription>{hi ? g.descHi : g.desc}</CardDescription>
+                <CardTitle className="text-base">{gt.title}</CardTitle>
+                <CardDescription>{gt.desc}</CardDescription>
               </CardHeader>
               <CardContent className="mt-auto space-y-3">
                 <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                  <Timer className="size-3.5" /> {hi ? "60 सेकंड राउंड" : "60 second round"}
+                  <Timer className="size-3.5" /> {ct("roundLabel")}
                 </p>
                 <Button className="w-full" onClick={() => setActive(g)}>
-                  🎮 {hi ? "गेम शुरू करें" : "Launch Game"}
+                  🎮 {ct("launch")}
                 </Button>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="space-y-4">
           <Button variant="ghost" size="sm" onClick={() => setActive(null)}>
             <ArrowLeft className="mr-1 size-4" />
-            {hi ? "सभी खेलों पर लौटें" : "Back to all games"}
+            {ct("back")}
           </Button>
           {active.kind === "fraction" ? (
-            <FractionPizza key={active.key} game={active} hi={hi} />
+            <FractionPizza key={`${active.key}-${lang}`} game={active} lang={lang} />
           ) : (
-            <AiQuizGame key={active.key} game={active} hi={hi} />
+            <AiQuizGame key={`${active.key}-${lang}`} game={active} lang={lang} />
           )}
         </div>
       )}
@@ -153,7 +154,7 @@ function ChallengesPage() {
 
 function GameShell({
   game,
-  hi,
+  lang,
   left,
   score,
   running,
@@ -162,7 +163,7 @@ function GameShell({
   children,
 }: {
   game: ChallengeGame;
-  hi: boolean;
+  lang: UiLang;
   left: number;
   score: number;
   running: boolean;
@@ -170,28 +171,30 @@ function GameShell({
   onRestart: () => void;
   children: React.ReactNode;
 }) {
+  const ct = challengeText(lang);
+  const gt = gameText(game.key, lang, { title: game.title, desc: game.desc, badge: game.badge });
   return (
     <Card className="animate-in fade-in slide-in-from-top-2 duration-300">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <CardTitle>
-            {game.emoji} {hi ? game.titleHi : game.title}
+            {game.emoji} {gt.title}
           </CardTitle>
-          <CardDescription>{hi ? game.descHi : game.desc}</CardDescription>
+          <CardDescription>{gt.desc}</CardDescription>
         </div>
         <Badge variant="secondary" className="w-fit shrink-0">
-          {hi ? game.badgeHi : game.badge}
+          {gt.badge}
         </Badge>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[180px] flex-1">
-            <Clock left={left} hi={hi} />
+            <Clock left={left} lang={lang} />
           </div>
           <Badge className="text-sm">⭐ {score}</Badge>
           <Button size="sm" variant="outline" onClick={onRestart} disabled={loading}>
             {loading ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
-            {running ? (hi ? "🔄 फिर से" : "🔄 Restart") : hi ? "▶️ शुरू करें" : "▶️ Start"}
+            {running ? ct("restart") : ct("start")}
           </Button>
         </div>
         {children}
@@ -235,8 +238,9 @@ function useRoundTelemetry(done: boolean, score: number, game: ChallengeGame, cl
 
 /* ------------------------- AI-streamed quiz games -------------------------- */
 
-function AiQuizGame({ game, hi }: { game: ChallengeGame; hi: boolean }) {
-  const { lang } = useI18n();
+function AiQuizGame({ game, lang }: { game: ChallengeGame; lang: UiLang }) {
+  const ct = challengeText(lang);
+  const hi = lang === "hi";
   const { registeredClass } = useApp();
   const generate = useServerFn(generateLiveQuiz);
   const classLevel = registeredClass ?? game.classRange;
@@ -338,7 +342,7 @@ function AiQuizGame({ game, hi }: { game: ChallengeGame; hi: boolean }) {
     <>
       <GameShell
         game={game}
-        hi={hi}
+        lang={lang}
         left={left}
         score={score}
         running={running}
@@ -348,7 +352,7 @@ function AiQuizGame({ game, hi }: { game: ChallengeGame; hi: boolean }) {
         {loading && (
           <div className="flex items-center gap-2 rounded-xl border-2 border-dashed p-6 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin text-primary" />
-            {hi ? "एआई ताज़े प्रश्न बना रहा है…" : "Streaming a fresh AI question set…"}
+            {ct("streaming")}
           </div>
         )}
 
@@ -356,17 +360,11 @@ function AiQuizGame({ game, hi }: { game: ChallengeGame; hi: boolean }) {
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {hi ? "प्रश्न" : "Question"} {idx + 1}/{questions.length}
+                {ct("question")} {idx + 1}/{questions.length}
               </span>
               <span className="flex items-center gap-1">
                 <Sparkles className="size-3.5 text-primary" />
-                {liveSource === "ai"
-                  ? hi
-                    ? "लाइव एआई सेट"
-                    : "Live AI set"
-                  : hi
-                    ? "ऑफ़लाइन सेट"
-                    : "Offline set"}
+                {liveSource === "ai" ? ct("liveAi") : ct("offlineSet")}
               </span>
             </div>
             <div className="rounded-xl border-2 border-dashed bg-muted/40 p-5 text-center text-lg font-semibold">
@@ -391,11 +389,9 @@ function AiQuizGame({ game, hi }: { game: ChallengeGame; hi: boolean }) {
       </GameShell>
       <CelebrationSplash
         open={done}
-        title={hi ? "🎉 शानदार राउंड!" : "🎉 Round complete!"}
-        subtitle={
-          hi ? `आपने ${score} सही उत्तर दिए।` : `You answered ${score} questions correctly in 60 seconds.`
-        }
-        actionLabel={hi ? "फिर से खेलें" : "Play again"}
+        title={ct("roundDone")}
+        subtitle={ct("roundDoneSub", { score })}
+        actionLabel={ct("playAgain")}
         onAction={() => void start()}
       />
     </>
@@ -431,7 +427,8 @@ function PizzaSvg({ num, den, size = 96 }: { num: number; den: number; size?: nu
   );
 }
 
-function FractionPizza({ game, hi }: { game: ChallengeGame; hi: boolean }) {
+function FractionPizza({ game, lang }: { game: ChallengeGame; lang: UiLang }) {
+  const ct = challengeText(lang);
   const { registeredClass } = useApp();
   const classLevel = registeredClass ?? game.classRange;
   const [round, setRound] = useState<FractionRound>(() => makeFractionRound());
@@ -477,7 +474,7 @@ function FractionPizza({ game, hi }: { game: ChallengeGame; hi: boolean }) {
 
   return (
     <>
-      <GameShell game={game} hi={hi} left={left} score={score} running={running} onRestart={start}>
+      <GameShell game={game} lang={lang} left={left} score={score} running={running} onRestart={start}>
         <div
           className={`rounded-xl border-2 p-5 text-center transition-colors ${
             feedback === "ok"
@@ -488,7 +485,7 @@ function FractionPizza({ game, hi }: { game: ChallengeGame; hi: boolean }) {
           }`}
         >
           <p className="text-sm text-muted-foreground">
-            {hi ? "इस भिन्न से मेल खाता पिज़्ज़ा चुनिए" : "Slice the pizza that matches this fraction"}
+            {ct("fractionPrompt")}
           </p>
           <p className="text-4xl font-bold">
             {round.num}/{round.den}
@@ -513,9 +510,9 @@ function FractionPizza({ game, hi }: { game: ChallengeGame; hi: boolean }) {
       </GameShell>
       <CelebrationSplash
         open={done}
-        title={hi ? "🎉 बढ़िया कटाई!" : "🎉 Great slicing!"}
-        subtitle={hi ? `आपने ${score} भिन्न सही मिलाईं।` : `You matched ${score} fractions in 60 seconds.`}
-        actionLabel={hi ? "फिर से खेलें" : "Play again"}
+        title={ct("fractionDone")}
+        subtitle={ct("fractionDoneSub", { score })}
+        actionLabel={ct("playAgain")}
         onAction={start}
       />
     </>

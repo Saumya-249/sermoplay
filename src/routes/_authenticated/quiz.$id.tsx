@@ -11,6 +11,7 @@ import { saveResult, loadResults, saveOfflineScore } from "@/lib/quiz-local";
 import { cachedQuizById } from "@/lib/offline-library";
 import { findWorkingGame } from "@/lib/working-games";
 import { useApp } from "@/lib/app-context";
+import { logQuizSubmission } from "@/lib/telemetry";
 import { toast } from "sonner";
 import { ArrowLeft, Check, X, Trophy, Sparkles, RotateCcw, HardDriveDownload } from "lucide-react";
 
@@ -81,7 +82,8 @@ const T = {
 function QuizPlayer() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { online } = useApp();
+  const { online, userId, registeredClass, classLocked } = useApp();
+  const [startedAt] = useState(() => Date.now());
   const staticGame = findWorkingGame(id);
   const [lang, setLang] = useState<Lang>(staticGame ? (staticGame.language === "Hindi" ? "hi" : "en") : "hi");
   const [step, setStep] = useState(0);
@@ -140,6 +142,24 @@ function QuizPlayer() {
     );
   }
 
+
+  const quizClass = (quiz.data as { class_level?: string }).class_level ?? "";
+  if (classLocked && quizClass && registeredClass && quizClass !== registeredClass) {
+    return (
+      <div className="mx-auto max-w-xl space-y-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 p-6 text-center">
+        <p className="text-4xl">🔒</p>
+        <h1 className="text-lg font-bold">Content locked for your grade</h1>
+        <p className="text-sm text-muted-foreground">
+          This quiz belongs to {quizClass}. Your account is registered for {registeredClass}, so you can only
+          play content matching your class.
+        </p>
+        <Button asChild>
+          <Link to="/library">Back to my {registeredClass} library</Link>
+        </Button>
+      </div>
+    );
+  }
+
   const total = questions.length;
   const q = questions[step];
   const prompt = (lang === "hi" ? q?.prompt_hi : q?.prompt_en) ?? q?.prompt ?? "";
@@ -188,6 +208,17 @@ function QuizPlayer() {
       });
     }
     setFinished(true);
+    void logQuizSubmission({
+      userId,
+      quizId: String(quiz.data!.id),
+      quizTitle: quiz.data!.title,
+      subject: (quiz.data as { subject?: string }).subject ?? "General",
+      topic: (quiz.data as { topic?: string | null }).topic ?? null,
+      classLevel: (quiz.data as { class_level?: string }).class_level ?? "Class 1",
+      correct: finalCorrect,
+      total,
+      durationSec: Math.round((Date.now() - startedAt) / 1000),
+    });
     toast.success(online ? "Saved to local storage" : "📦 Saved to offline score history", {
       description: `${finalCorrect}/${total} · ${score}% — ${t.saved}`,
     });

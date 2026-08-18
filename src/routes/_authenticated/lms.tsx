@@ -40,10 +40,14 @@ export const Route = createFileRoute("/_authenticated/lms")({
   component: LmsHubPage,
 });
 
+import { useApp } from "@/lib/app-context";
+
 const ALL = "all";
 
 function LmsHubPage() {
   const [language, setLanguage] = useState<string>("English");
+  const { registeredClass, classLocked } = useApp();
+  const lockedClass = classLocked ? registeredClass : null;
   const [classLevel, setClassLevel] = useState<string>(ALL);
   const [subject, setSubject] = useState<string>(ALL);
 
@@ -52,16 +56,22 @@ function LmsHubPage() {
       OFFLINE_LMS_RESOURCES.filter(
         (r) =>
           (language === ALL || r.language === language) &&
+          (!lockedClass || r.classLevel === lockedClass) &&
           (classLevel === ALL || r.classLevel === classLevel) &&
           (subject === ALL || r.subject === subject),
       ),
-    [language, classLevel, subject],
+    [language, classLevel, subject, lockedClass],
   );
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">📖 Offline LMS &amp; Flashcard Hub</h1>
+        {lockedClass && (
+          <p className="inline-block rounded-md bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">
+            🔒 Locked to {lockedClass} — your registered grade level.
+          </p>
+        )}
         <p className="text-sm text-muted-foreground">
           Pre-loaded lesson summaries and flip-card decks. Everything below is stored in the app —
           filters run instantly with no network requests.

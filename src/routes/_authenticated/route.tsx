@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { BrandLogo } from "@/components/brand-logo";
 import { AppProvider, useApp } from "@/lib/app-context";
 import { I18nProvider, useI18n, type I18nKey } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/i18n";
@@ -35,6 +36,7 @@ import {
   Gamepad2,
   Timer,
   Trophy,
+  BarChart3,
   ShieldCheck,
   LogOut,
   Wifi,
@@ -60,7 +62,11 @@ export const Route = createFileRoute("/_authenticated")({
     else if (roles.includes("teacher")) role = "teacher";
     else if (roles.includes("student")) role = "student";
     else role = (data.user.user_metadata?.["role"] as AppRole) ?? "teacher";
-    return { user: data.user, role, guest: false };
+    const registeredClass =
+      (data.user.user_metadata?.["grade_level"] as string | undefined) ??
+      (data.user.user_metadata?.["registered_class"] as string | undefined) ??
+      null;
+    return { user: data.user, role, guest: false, registeredClass };
   },
   component: AppLayout,
 });
@@ -73,13 +79,14 @@ const NAV: { to: string; key: I18nKey; icon: typeof LayoutDashboard }[] = [
   { to: "/challenges", key: "challenges", icon: Timer },
   { to: "/leaderboard", key: "leaderboard", icon: Trophy },
   { to: "/quiz-creator", key: "quizCreator", icon: FilePlus2 },
+  { to: "/analytics", key: "analytics", icon: BarChart3 },
   { to: "/printables", key: "printables", icon: Printer },
   { to: "/sync", key: "sync", icon: RefreshCw },
   { to: "/admin", key: "admin", icon: ShieldCheck },
 ];
 
 function AppLayout() {
-  const { user, role, guest } = Route.useRouteContext();
+  const { user, role, guest, registeredClass } = Route.useRouteContext();
   return (
     <I18nProvider>
       <AppProvider
@@ -87,6 +94,7 @@ function AppLayout() {
         userEmail={user?.email ?? null}
         role={role}
         guest={guest}
+        registeredClass={registeredClass}
       >
         <SidebarProvider>
           <Shell />
@@ -125,9 +133,7 @@ function Shell() {
       <Sidebar collapsible="icon">
         <SidebarHeader className="gap-3 px-3 py-4">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-lg">
-              📚
-            </span>
+            <BrandLogo />
             <div className="min-w-0 group-data-[collapsible=icon]:hidden">
               <p className="truncate text-sm font-bold text-sidebar-foreground">{displayName}</p>
               <p className="truncate text-xs font-medium text-sidebar-foreground/70">

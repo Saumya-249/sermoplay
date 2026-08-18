@@ -12,16 +12,6 @@ export type StudentRow = {
   incorrectShare: number;
 };
 
-export type TeacherRow = {
-  name: string;
-  nameHi: string;
-  quizzesGenerated: number;
-  topSubject: string;
-  topSubjectHi: string;
-  activeClasses: number;
-  lmsModules: number;
-};
-
 export const STUDENT_ROWS: StudentRow[] = [
   { name: "Aarav Sharma", nameHi: "आरव शर्मा", classLevel: "Class 1", avgScore: 81, timePerGameSec: 38, completionRate: 92, weakestSubject: "Maths", weakestSubjectHi: "गणित", incorrectShare: 34 },
   { name: "Diya Patel", nameHi: "दीया पटेल", classLevel: "Class 2", avgScore: 76, timePerGameSec: 44, completionRate: 88, weakestSubject: "Science", weakestSubjectHi: "विज्ञान", incorrectShare: 41 },
@@ -31,14 +21,6 @@ export const STUDENT_ROWS: StudentRow[] = [
   { name: "Meera Nair", nameHi: "मीरा नायर", classLevel: "Class 6", avgScore: 88, timePerGameSec: 33, completionRate: 97, weakestSubject: "Science", weakestSubjectHi: "विज्ञान", incorrectShare: 22 },
   { name: "Rohan Das", nameHi: "रोहन दास", classLevel: "Class 7", avgScore: 65, timePerGameSec: 56, completionRate: 68, weakestSubject: "Maths", weakestSubjectHi: "गणित", incorrectShare: 52 },
   { name: "Sara Khan", nameHi: "सारा खान", classLevel: "Class 8", avgScore: 79, timePerGameSec: 41, completionRate: 86, weakestSubject: "Social Studies", weakestSubjectHi: "सामाजिक अध्ययन", incorrectShare: 31 },
-];
-
-export const TEACHER_ROWS: TeacherRow[] = [
-  { name: "Sunita Joshi", nameHi: "सुनीता जोशी", quizzesGenerated: 42, topSubject: "Maths", topSubjectHi: "गणित", activeClasses: 4, lmsModules: 11 },
-  { name: "Ramesh Iyer", nameHi: "रमेश अय्यर", quizzesGenerated: 35, topSubject: "Science", topSubjectHi: "विज्ञान", activeClasses: 3, lmsModules: 8 },
-  { name: "Fatima Ansari", nameHi: "फ़ातिमा अंसारी", quizzesGenerated: 28, topSubject: "Language", topSubjectHi: "भाषा", activeClasses: 5, lmsModules: 14 },
-  { name: "Vikram Singh", nameHi: "विक्रम सिंह", quizzesGenerated: 19, topSubject: "Social Studies", topSubjectHi: "सामाजिक अध्ययन", activeClasses: 2, lmsModules: 6 },
-  { name: "Priya Menon", nameHi: "प्रिया मेनन", quizzesGenerated: 24, topSubject: "Maths", topSubjectHi: "गणित", activeClasses: 3, lmsModules: 9 },
 ];
 
 export const COMPLETION_BY_CLASS = STUDENT_ROWS.map((s) => ({
@@ -61,6 +43,3 @@ export const AVG_TIMED_GAME_SEC = Math.round(
   STUDENT_ROWS.reduce((a, s) => a + s.timePerGameSec, 0) / STUDENT_ROWS.length,
 );
 
-export const TOTAL_LMS_MODULES = TEACHER_ROWS.reduce((a, t) => a + t.lmsModules, 0);
-
-export const FALLBACK_QUIZ_COUNT = TEACHER_ROWS.reduce((a, t) => a + t.quizzesGenerated, 0);

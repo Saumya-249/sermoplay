@@ -25,6 +25,10 @@ type AppState = {
   userEmail: string | null;
   role: AppRole;
   guest: boolean;
+  /** Class the student registered with; null for staff accounts. */
+  registeredClass: string | null;
+  /** True when the signed-in account may only see its own registered class. */
+  classLocked: boolean;
   pendingQueue: PendingQuiz[];
   queueQuiz: (title: string, payload: Record<string, unknown>) => void;
   syncing: boolean;
@@ -44,12 +48,14 @@ export function AppProvider({
   userEmail,
   role = "teacher",
   guest = false,
+  registeredClass = null,
   children,
 }: {
   userId: string | null;
   userEmail: string | null;
   role?: AppRole;
   guest?: boolean;
+  registeredClass?: string | null;
   children: ReactNode;
 }) {
   const [online, setOnlineState] = useState(true);
@@ -94,9 +100,24 @@ export function AppProvider({
     enqueuePendingQuiz(title, payload);
   }, []);
 
+  const classLocked = role === "student" && Boolean(registeredClass);
+
   const value = useMemo<AppState>(
-    () => ({ online, setOnline, userId, userEmail, role, guest, pendingQueue, queueQuiz, syncing, syncNow }),
-    [online, setOnline, userId, userEmail, role, guest, pendingQueue, queueQuiz, syncing, syncNow],
+    () => ({
+      online,
+      setOnline,
+      userId,
+      userEmail,
+      role,
+      guest,
+      registeredClass,
+      classLocked,
+      pendingQueue,
+      queueQuiz,
+      syncing,
+      syncNow,
+    }),
+    [online, setOnline, userId, userEmail, role, guest, registeredClass, classLocked, pendingQueue, queueQuiz, syncing, syncNow],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

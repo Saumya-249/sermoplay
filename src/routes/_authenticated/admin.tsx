@@ -8,15 +8,13 @@ import { Label } from "@/components/ui/label";
 import { useApp } from "@/lib/app-context";
 import { useI18n } from "@/lib/i18n";
 import { loadPendingQueue } from "@/lib/pending-sync";
+import { TeacherAnalytics } from "@/components/teacher-analytics";
 import { useEffect, useState } from "react";
 import {
   STUDENT_ROWS,
-  TEACHER_ROWS,
   WEAK_SUBJECT_DISTRIBUTION,
   GLOBAL_AVG_SCORE,
   AVG_TIMED_GAME_SEC,
-  TOTAL_LMS_MODULES,
-  FALLBACK_QUIZ_COUNT,
 } from "@/lib/admin-analytics";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -104,8 +102,8 @@ function AdminPage() {
 
   const teachers = (profiles.data ?? []).filter((p) => p.role === "teacher");
   const liveQuizzes = quizCount.data ?? 0;
-  const totalQuizzes = (online ? liveQuizzes : 0) + FALLBACK_QUIZ_COUNT;
-  const activeEducators = Math.max(teachers.length, TEACHER_ROWS.length);
+  const totalQuizzes = liveQuizzes;
+  const activeEducators = teachers.length;
 
   return (
     <div className="space-y-6">
@@ -129,7 +127,7 @@ function AdminPage() {
           emoji="📊"
           label={hi ? "कुल एआई क्विज़ बनाए गए" : "Total AI Quizzes Generated"}
           value={String(totalQuizzes)}
-          sub={online ? `${liveQuizzes} ${hi ? "लाइव" : "live"} + ${FALLBACK_QUIZ_COUNT} ${hi ? "संग्रह" : "archive"}` : hi ? "कैश्ड कुल" : "cached total"}
+          sub={online ? (hi ? "लाइव डेटाबेस गणना" : "live database count") : hi ? "कैश्ड कुल" : "cached total"}
         />
         <StatCard
           emoji="📈"
@@ -141,7 +139,7 @@ function AdminPage() {
           emoji="👩‍🏫"
           label={hi ? "कुल सक्रिय शिक्षक" : "Total Active Educators"}
           value={String(activeEducators)}
-          sub={`${TEACHER_ROWS.reduce((a, t) => a + t.activeClasses, 0)} ${hi ? "सक्रिय कक्षाएँ" : "active classes"}`}
+          sub={hi ? "पंजीकृत शिक्षक खाते" : "registered teacher accounts"}
         />
         <StatCard
           emoji="⏱️"
@@ -236,56 +234,18 @@ function AdminPage() {
         </CardContent>
       </Card>
 
-      {/* 2. Teacher activity monitoring */}
+      {/* 2. Teacher activity monitoring — live telemetry */}
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>{hi ? "👩‍🏫 शिक्षक गतिविधि निगरानी" : "👩‍🏫 Teacher Activity Monitoring"}</CardTitle>
+          <CardTitle>{hi ? "👩‍🏫 शिक्षक गतिविधि निगरानी (लाइव)" : "👩‍🏫 Teacher Activity Monitoring (Live)"}</CardTitle>
           <CardDescription>
-            {hi ? "बनाए गए क्विज़, प्रमुख विषय, सक्रिय कक्षाएँ और तैनात एलएमएस मॉड्यूल।" : "Quizzes generated, most used subjects, active classes and deployed LMS modules."}
+            {hi
+              ? "सक्रिय मॉड्यूल, साप्ताहिक छात्र पूर्णताएँ और विषयवार सटीकता — सीधे लाइव लॉग से।"
+              : "Active modules, weekly student completions and accuracy by topic — computed from live logs."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground">{hi ? "एलएमएस मॉड्यूल तैनात" : "LMS Modules Deployed"}</p>
-              <p className="text-2xl font-bold tabular-nums">{TOTAL_LMS_MODULES}</p>
-            </div>
-            <div className="rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground">{hi ? "कुल क्विज़ बनाए" : "Quizzes Generated"}</p>
-              <p className="text-2xl font-bold tabular-nums">{TEACHER_ROWS.reduce((a, t) => a + t.quizzesGenerated, 0)}</p>
-            </div>
-            <div className="rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground">{hi ? "सक्रिय कक्षाएँ" : "Active Classes Managed"}</p>
-              <p className="text-2xl font-bold tabular-nums">{TEACHER_ROWS.reduce((a, t) => a + t.activeClasses, 0)}</p>
-            </div>
-          </div>
-
-          <div className="w-full overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <thead>
-                <tr className="bg-muted/60 text-left">
-                  <th className="border-b p-3 font-semibold">{hi ? "शिक्षक" : "Teacher"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "कुल क्विज़" : "Total Quizzes Generated"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "सर्वाधिक उपयोग विषय" : "Most Used Subject"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "सक्रिय कक्षाएँ" : "Active Classes"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "एलएमएस मॉड्यूल" : "LMS Modules Deployed"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TEACHER_ROWS.map((t) => (
-                  <tr key={t.name} className="odd:bg-background even:bg-muted/20">
-                    <td className="border-b p-3 font-medium">{hi ? t.nameHi : t.name}</td>
-                    <td className="border-b p-3 tabular-nums">{t.quizzesGenerated}</td>
-                    <td className="border-b p-3">
-                      <Badge variant="secondary">{hi ? t.topSubjectHi : t.topSubject}</Badge>
-                    </td>
-                    <td className="border-b p-3 tabular-nums">{t.activeClasses}</td>
-                    <td className="border-b p-3 tabular-nums">{t.lmsModules}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <CardContent>
+          <TeacherAnalytics hi={hi} />
         </CardContent>
       </Card>
 

@@ -53,12 +53,43 @@ export const MODULE_EN = {
   balancedInPrefix: "You balanced the crop in",
   movesSuffix: "moves",
   speedAdditionRace: "Speed Addition Race",
+  // Arcade Arena
+  arenaTitle: "Educational Arcade Arena",
+  arenaSub: "15 applied-learning games with live AI-generated content in your language.",
+  arenaGamesCount: "games ready",
+  quitArena: "Quit Arena / Return to Gallery",
+  synthesizing: "Synthesizing live game data…",
+  livePack: "Live AI pack",
+  offlinePack: "Offline pack",
+  roundLabel: "Round",
+  scoreLabel: "Score",
+  timeUpLabel: "Time's up!",
+  finalScore: "Final score",
+  newAiRound: "New AI round",
+  arenaCleared: "Arena cleared!",
+  tapBinHint: "Tap a token, then tap the bin it belongs to",
+  tapOrderHint: "Tap the events in the correct order",
+  fractionHint: "Tap slices until the plate matches the order",
+  weightHint: "Stack weights until the scale matches the bag",
+  targetWeight: "Target weight",
+  minutesShort: "min",
+  secondsShort: "s",
+  correctLabel: "Correct",
+  wrongLabel: "Wrong",
 } as const;
 
 export type ModuleKey = keyof typeof MODULE_EN;
 type Dict = Partial<Record<ModuleKey, string>>;
 
 const HI: Dict = {
+  arenaTitle: "शैक्षिक आर्केड अखाड़ा", arenaSub: "आपकी भाषा में लाइव एआई सामग्री के साथ 15 व्यावहारिक खेल।",
+  arenaGamesCount: "खेल तैयार", quitArena: "अखाड़ा छोड़ें / गैलरी पर लौटें", synthesizing: "लाइव खेल डेटा बनाया जा रहा है…",
+  livePack: "लाइव एआई सेट", offlinePack: "ऑफ़लाइन सेट", roundLabel: "चरण", scoreLabel: "अंक",
+  timeUpLabel: "समय समाप्त!", finalScore: "अंतिम अंक", newAiRound: "नया एआई दौर", arenaCleared: "अखाड़ा जीत लिया!",
+  tapBinHint: "पहले टोकन दबाएँ, फिर उसका सही डिब्बा दबाएँ", tapOrderHint: "घटनाओं को सही क्रम में दबाएँ",
+  fractionHint: "जब तक थाली ऑर्डर से मेल न खाए, टुकड़े दबाएँ", weightHint: "तराजू मिलाने तक बाट रखें",
+  targetWeight: "लक्ष्य वज़न", minutesShort: "मिनट", secondsShort: "से", correctLabel: "सही", wrongLabel: "गलत",
+
   navHome: "होम", navSandbox: "एआई सैंडबॉक्स", navCurriculum: "पाठ्यक्रम अन्वेषक", navFeatures: "विशेषताएँ", signIn: "साइन इन",
   missionTitle: "हमारा उद्देश्य",
   missionText: "सर्मो प्ले — एक ऑफ़लाइन-प्रथम मंच जो छात्रों, शिक्षकों और प्रशासकों को स्थानीय भाषा में पाठ्यक्रम और गेम सामग्री देता है।",
@@ -79,6 +110,15 @@ const HI: Dict = {
 };
 
 const TA: Dict = {
+  arenaTitle: "கல்வி ஆர்கேட் அரங்கம்", arenaSub: "உங்கள் மொழியில் நேரடி AI உள்ளடக்கத்துடன் 15 நடைமுறை விளையாட்டுகள்.",
+  arenaGamesCount: "விளையாட்டுகள் தயார்", quitArena: "அரங்கை விட்டு வெளியேறு / தொகுப்பிற்குத் திரும்பு",
+  synthesizing: "நேரடி விளையாட்டுத் தரவு உருவாக்கப்படுகிறது…", livePack: "நேரடி AI தொகுப்பு", offlinePack: "ஆஃப்லைன் தொகுப்பு",
+  roundLabel: "சுற்று", scoreLabel: "மதிப்பெண்", timeUpLabel: "நேரம் முடிந்தது!", finalScore: "இறுதி மதிப்பெண்",
+  newAiRound: "புதிய AI சுற்று", arenaCleared: "அரங்கம் வெற்றி!", tapBinHint: "முதலில் டோக்கனைத் தட்டவும், பிறகு சரியான பெட்டியைத் தட்டவும்",
+  tapOrderHint: "நிகழ்வுகளைச் சரியான வரிசையில் தட்டவும்", fractionHint: "தட்டு ஆர்டருடன் பொருந்தும் வரை துண்டுகளைத் தட்டவும்",
+  weightHint: "தராசு பொருந்தும் வரை எடைகளை அடுக்கவும்", targetWeight: "இலக்கு எடை", minutesShort: "நிமி", secondsShort: "வி",
+  correctLabel: "சரி", wrongLabel: "தவறு",
+
   navHome: "முகப்பு", navSandbox: "AI சாண்ட்பாக்ஸ்", navCurriculum: "பாடத்திட்ட ஆய்வு", navFeatures: "அம்சங்கள்", signIn: "உள்நுழை",
   missionTitle: "நோக்கம்",
   missionText: "செர்மோ ப்ளே — மாணவர்கள், ஆசிரியர்கள் மற்றும் நிர்வாகிகளுக்கு உள்ளூர் மொழியில் பாடத்திட்டம் மற்றும் விளையாட்டு உள்ளடக்கம் வழங்கும் ஆஃப்லைன்-முதல் தளம்.",

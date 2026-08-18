@@ -18,8 +18,7 @@ export const Route = createFileRoute("/_authenticated/leaderboard")({
 });
 
 function LeaderboardPage() {
-  const { lang } = useI18n();
-  const hi = lang === "hi";
+  const { t, lang } = useI18n();
   const [rows, setRows] = useState<QuizResult[]>([]);
 
   useEffect(() => {
@@ -30,24 +29,20 @@ function LeaderboardPage() {
   const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`);
 
   return (
-    <div className="space-y-6">
+    <div key={lang} className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{hi ? "🏆 लीडरबोर्ड" : "🏆 Leaderboard"}</h1>
-        <p className="text-sm text-muted-foreground">
-          {hi
-            ? "इस डिवाइस पर सहेजे गए सभी क्विज़ और मिनी-गेम स्कोर।"
-            : "Every quiz and mini-game score recorded offline on this device."}
-        </p>
+        <h1 className="text-2xl font-bold">🏆 {t("lbTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("lbSub")}</p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>{hi ? "शीर्ष प्रदर्शन" : "Top performances"}</CardTitle>
-          <CardDescription>{rows.length} {hi ? "रिकॉर्ड" : "records"}</CardDescription>
+          <CardTitle>{t("lbTopTitle")}</CardTitle>
+          <CardDescription>{rows.length} {t("lbRecords")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {rows.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              {hi ? "अभी कोई स्कोर नहीं — कोई गेम खेलें!" : "No scores yet — play a game to get on the board!"}
+              {t("lbEmpty")}
             </p>
           )}
           {rows.map((r, i) => (

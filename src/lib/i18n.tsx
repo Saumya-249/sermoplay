@@ -33,6 +33,7 @@ const EN = {
   printables: "Printable Hub",
   sync: "Sync Panel",
   leaderboard: "Leaderboard",
+  analytics: "Teacher Analytics",
   admin: "Admin Console",
   quizPlayer: "Quiz Player",
   networkStatus: "Network Status",

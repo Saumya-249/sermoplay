@@ -28,21 +28,14 @@ export const Route = createFileRoute("/_authenticated/analytics")({
 });
 
 function AnalyticsPage() {
-  const { lang } = useI18n();
-  const hi = lang === "hi";
+  const { t, lang } = useI18n();
   return (
-    <div className="space-y-6">
+    <div key={lang} className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">
-          {hi ? "📊 शिक्षक एनालिटिक्स — लाइव टेलीमेट्री" : "📊 Teacher Console Analytics — Live Telemetry"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {hi
-            ? "हर आँकड़ा सीधे लाइव डेटाबेस लॉग से गणना किया गया है — कोई डमी डेटा नहीं।"
-            : "Every figure is computed directly from live game-session and quiz-submission logs — no mock data."}
-        </p>
+        <h1 className="text-2xl font-bold">📊 {t("anPageTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("anPageSub")}</p>
       </div>
-      <TeacherAnalytics hi={hi} />
+      <TeacherAnalytics />
     </div>
   );
 }

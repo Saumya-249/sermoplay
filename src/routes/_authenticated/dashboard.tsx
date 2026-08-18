@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
 import { useI18n } from "@/lib/i18n";
-import { canAccess, roleLabel } from "@/lib/roles";
+import { canAccess } from "@/lib/roles";
+import { localizeGameText } from "@/lib/game-i18n";
 import { WORKING_GAME_LIBRARY } from "@/lib/working-games";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { userId, online, role, guest } = useApp();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const showSync = canAccess(role, "/sync");
   const games = WORKING_GAME_LIBRARY;
 
@@ -49,7 +50,7 @@ function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">
-          {t("greeting")} {guest ? t("guest") : roleLabel(role)}
+          {t("greeting")} {guest ? t("guest") : role === "admin" ? t("administrator") : role === "teacher" ? t("teacher") : t("student")}
         </h1>
         <p className="text-sm text-muted-foreground">{t("greetingSub")}</p>
         {guest && (
@@ -90,9 +91,12 @@ function Dashboard() {
                 >
                   <span className="text-2xl">{g.emoji}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{g.title}</p>
+                    <p className="truncate font-medium">{localizeGameText(g.title, lang)}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {g.language} · {g.subject} · {g.classLevel} · {g.questions.length} questions
+                      {localizeGameText(
+                        `${g.language} · ${g.subject} · ${g.classLevel} · ${g.questions.length} questions`,
+                        lang,
+                      )}
                     </p>
                   </div>
                   <Button size="sm" asChild>
@@ -126,7 +130,7 @@ function Dashboard() {
             <div className="rounded-lg border p-3 text-sm">
               <p className="font-medium">{pending.data?.length ?? 0} {t("recordsQueued")}</p>
               <p className="text-xs text-muted-foreground">
-                Scores, quizzes and downloads recorded offline upload automatically once connectivity returns.
+                {t("syncNote")}
               </p>
             </div>
             {showSync && (

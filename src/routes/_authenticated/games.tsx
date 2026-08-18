@@ -12,6 +12,8 @@ import {
   type GameLanguage,
 } from "@/lib/contextual-games";
 import { CelebrationSplash } from "@/components/games/celebration";
+import { useApp } from "@/lib/app-context";
+import { logGameSession } from "@/lib/telemetry";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,9 +49,15 @@ export const Route = createFileRoute("/_authenticated/games")({
 });
 
 function GamesHubPage() {
+  const { registeredClass, classLocked } = useApp();
   const [language, setLanguage] = useState<GameLanguage>("English");
   const [subject, setSubject] = useState<string>("Math");
-  const [classLevel, setClassLevel] = useState<string>("Class 3");
+  const [classLevel, setClassLevel] = useState<string>(
+    classLocked && registeredClass ? registeredClass : "Class 3",
+  );
+  useEffect(() => {
+    if (classLocked && registeredClass) setClassLevel(registeredClass);
+  }, [classLocked, registeredClass]);
 
   const showBazaar = subject === "Math";
   const crop = CROPS[classLevel] ?? CROPS["Class 3"]!;
@@ -128,6 +136,18 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
   const [itemIndex, setItemIndex] = useState(0);
   const [tokens, setTokens] = useState<{ id: number; value: number; kind: "coin" | "note" }[]>([]);
   const [won, setWon] = useState(false);
+  const { userId } = useApp();
+  useEffect(() => {
+    if (!won) return;
+    void logGameSession({
+      userId,
+      moduleKey: "bazaar-currency-counter",
+      moduleLabel: "Regional Bazaar Currency Counter",
+      subject: "Math",
+      classLevel,
+      score: itemIndex + 1,
+    });
+  }, [won, userId, classLevel, itemIndex]);
 
   const item = items[Math.min(itemIndex, items.length - 1)]!;
   const target = item.unitPrice * item.quantity;
@@ -269,6 +289,7 @@ function EcosystemGame({
 }) {
   const [metrics, setMetrics] = useState<Metrics>({ water: 0, nutrients: 0, pest: 0 });
   const [moves, setMoves] = useState(0);
+  const { userId } = useApp();
 
   const balanced = useMemo(
     () => metrics.water === 100 && metrics.nutrients === 100 && metrics.pest === 100,

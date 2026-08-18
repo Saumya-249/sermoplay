@@ -8,7 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CelebrationSplash, playRewardSound } from "@/components/games/celebration";
 import { useI18n } from "@/lib/i18n";
 import { saveOfflineScore } from "@/lib/quiz-local";
-import { Timer } from "lucide-react";
+import { useApp } from "@/lib/app-context";
+import { logGameSession } from "@/lib/telemetry";
+import { useServerFn } from "@tanstack/react-start";
+import { generateLiveQuiz } from "@/lib/live-quiz.functions";
+import { Timer, Loader2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/challenges")({
   head: () => ({
@@ -30,6 +34,36 @@ export const Route = createFileRoute("/_authenticated/challenges")({
 });
 
 const ROUND_SECONDS = 60;
+
+/** Push a finished round into the live telemetry stream powering the teacher analytics console. */
+function useRoundTelemetry(
+  done: boolean,
+  score: number,
+  moduleKey: string,
+  moduleLabel: string,
+  subject: string,
+  classLevel: string,
+) {
+  const { userId } = useApp();
+  const sent = useRef(false);
+  useEffect(() => {
+    if (!done) {
+      sent.current = false;
+      return;
+    }
+    if (sent.current) return;
+    sent.current = true;
+    void logGameSession({
+      userId,
+      moduleKey,
+      moduleLabel,
+      subject,
+      classLevel,
+      score,
+      durationSec: ROUND_SECONDS,
+    });
+  }, [done, score, moduleKey, moduleLabel, subject, classLevel, userId]);
+}
 
 function useCountdown(running: boolean, onEnd: () => void) {
   const [left, setLeft] = useState(ROUND_SECONDS);
@@ -91,6 +125,7 @@ function ChallengesPage() {
           <TabsTrigger value="a">🪙 {hi ? "तेज़ जोड़ दौड़" : "Speed Addition Race"}</TabsTrigger>
           <TabsTrigger value="b">🌾 {hi ? "पारिस्थितिकी संतुलन" : "Ecosystem Balance"}</TabsTrigger>
           <TabsTrigger value="c">🗺️ {hi ? "मानचित्र जासूस" : "Map Legend Detective"}</TabsTrigger>
+          <TabsTrigger value="d">✨ {hi ? "एआई लॉजिक स्प्रिंट" : "AI Logic Sprint"}</TabsTrigger>
         </TabsList>
         <TabsContent value="a" className="pt-4">
           <SpeedAddition hi={hi} />
@@ -100,6 +135,9 @@ function ChallengesPage() {
         </TabsContent>
         <TabsContent value="c" className="pt-4">
           <MapDetective hi={hi} />
+        </TabsContent>
+        <TabsContent value="d" className="pt-4">
+          <AiLogicSprint hi={hi} />
         </TabsContent>
       </Tabs>
     </div>
@@ -210,6 +248,8 @@ function SpeedAddition({ hi }: { hi: boolean }) {
       });
     }
   }, [done, score, hi]);
+
+  useRoundTelemetry(done, score, "speed-addition-race", "Speed Addition Race", "Math", "Class 1-3");
 
   return (
     <>
@@ -324,6 +364,8 @@ function EcosystemChallenge({ hi }: { hi: boolean }) {
       return next;
     });
   }
+
+  useRoundTelemetry(done, score, "ecosystem-balance", "Ecosystem Balance Challenge", "Science", "Class 4-6");
 
   const bars = useMemo(
     () => [
@@ -467,6 +509,8 @@ function MapDetective({ hi }: { hi: boolean }) {
     setTimeout(() => setRunning(true), 0);
   }
 
+  useRoundTelemetry(done, score, "map-legend-detective", "Map Legend Detective", "Social Science", "Class 6-8");
+
   const q = MAP_QUESTIONS[idx]!;
 
   function pick(i: number) {
@@ -525,6 +569,163 @@ function MapDetective({ hi }: { hi: boolean }) {
         actionLabel={hi ? "फिर से खेलें" : "Play again"}
         onAction={start}
       />
+    </>
+  );
+}
+
+
+const SPRINT_TOPICS = [
+  { key: "Fractions", subject: "Math", classLevel: "Class 5" },
+  { key: "Photosynthesis", subject: "Science", classLevel: "Class 7" },
+  { key: "Indian Rivers", subject: "Social Science", classLevel: "Class 6" },
+  { key: "Percentages", subject: "Math", classLevel: "Class 8" },
+] as const;
+
+type SprintQuestion = { prompt_en: string; prompt_hi: string; options_en: string[]; options_hi: string[]; answer: number };
+
+function AiLogicSprint({ hi }: { hi: boolean }) {
+  const generate = useServerFn(generateLiveQuiz);
+  const [topic, setTopic] = useState<(typeof SPRINT_TOPICS)[number]>(SPRINT_TOPICS[0]);
+  const [questions, setQuestions] = useState<SprintQuestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+  const [score, setScore] = useState(0);
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+
+  const left = useCountdown(running, () => {
+    setRunning(false);
+    setDone(true);
+  });
+
+  useRoundTelemetry(done, score, `ai-logic-sprint:${topic.key}`, `AI Logic Sprint — ${topic.key}`, topic.subject, topic.classLevel);
+
+  const start = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setDone(false);
+    setScore(0);
+    setIdx(0);
+    setPicked(null);
+    try {
+      const res = await generate({
+        data: {
+          subject: topic.subject,
+          topic: topic.key,
+          classLevel: topic.classLevel,
+          language: hi ? "Hindi" : "English",
+          difficulty: "Medium",
+          variant: Math.floor(Math.random() * 10000),
+          count: 10,
+          mode: "single",
+          rows: [],
+        },
+      });
+      const list = (res.questions ?? []) as SprintQuestion[];
+      if (list.length === 0) throw new Error("empty");
+      setQuestions(list);
+      setRunning(false);
+      setTimeout(() => setRunning(true), 0);
+    } catch {
+      setError(hi ? "एआई प्रश्न लोड नहीं हो सके। पुनः प्रयास करें।" : "Could not load fresh AI questions. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [generate, hi, topic]);
+
+  const q = questions[idx];
+
+  function pick(i: number) {
+    if (picked !== null || !q) return;
+    setPicked(i);
+    if (i === q.answer) {
+      playRewardSound();
+      setScore((s) => s + 1);
+    }
+    setTimeout(() => {
+      setPicked(null);
+      setIdx((prev) => {
+        const next = prev + 1;
+        if (next >= questions.length) {
+          setRunning(false);
+          setDone(true);
+          return prev;
+        }
+        return next;
+      });
+    }, 500);
+  }
+
+  return (
+    <>
+      <GameShell
+        title={hi ? "✨ एआई लॉजिक स्प्रिंट" : "✨ AI Logic Sprint"}
+        subtitle={
+          hi
+            ? "हर राउंड में एआई ताज़े, बिना दोहराव वाले शैक्षणिक प्रश्न बनाता है।"
+            : "Every round asks the AI engine for a freshly randomized set of academic logic problems — never repeated dummy data."
+        }
+        badge={`${topic.classLevel} · ${topic.subject}`}
+        running={running}
+        left={left}
+        score={score}
+        onStart={() => void start()}
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {SPRINT_TOPICS.map((tp) => (
+              <Button
+                key={tp.key}
+                size="sm"
+                variant={tp.key === topic.key ? "default" : "outline"}
+                disabled={running || loading}
+                onClick={() => setTopic(tp)}
+              >
+                {tp.key}
+              </Button>
+            ))}
+          </div>
+
+          {loading && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              {hi ? "एआई नए प्रश्न बना रहा है…" : "AI is synthesizing a fresh question set…"}
+            </p>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          {running && q && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {hi ? "प्रश्न" : "Question"} {idx + 1}/{questions.length}
+              </p>
+              <p className="text-lg font-semibold">{hi ? q.prompt_hi || q.prompt_en : q.prompt_en}</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(hi ? q.options_hi?.length ? q.options_hi : q.options_en : q.options_en).map((opt, i) => (
+                  <Button
+                    key={`${opt}-${i}`}
+                    variant={picked === i ? (i === q.answer ? "default" : "destructive") : "outline"}
+                    className="h-auto justify-start whitespace-normal py-3 text-left"
+                    onClick={() => pick(i)}
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!running && !loading && questions.length === 0 && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Sparkles className="size-4 text-primary" />
+              {hi ? "शुरू करने पर एआई नए प्रश्न बनाएगा।" : "Press start and the AI will generate a brand-new question set."}
+            </p>
+          )}
+        </div>
+      </GameShell>
+      <CelebrationSplash show={done && score > 0} label={`${score} ${hi ? "सही" : "correct"}`} />
     </>
   );
 }

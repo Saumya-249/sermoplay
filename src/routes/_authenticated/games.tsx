@@ -143,7 +143,8 @@ function Filter({
 
 /* ---------------- Game 1: Regional Bazaar Currency Counter ---------------- */
 
-function BazaarGame({ language, classLevel }: { language: GameLanguage; classLevel: string }) {
+function BazaarGame({ lang, classLevel }: { lang: UiLang; classLevel: string }) {
+  const { t } = useI18n();
   const items = BAZAAR_ITEMS[classLevel] ?? BAZAAR_ITEMS["Class 3"]!;
   const [itemIndex, setItemIndex] = useState(0);
   const [tokens, setTokens] = useState<{ id: number; value: number; kind: "coin" | "note" }[]>([]);
@@ -191,13 +192,9 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
       <Card className="overflow-hidden">
         <CardHeader className="bg-primary/5">
           <CardTitle className="flex items-center gap-2">
-            🏪 {language === "Hindi" ? "क्षेत्रीय बाज़ार — मुद्रा गिनती" : "Regional Bazaar Currency Counter"}
+            🏪 {t("bazaarTitle")}
           </CardTitle>
-          <CardDescription>
-            {language === "Hindi"
-              ? "सही राशि बनाने के लिए सिक्के और नोट चुनें।"
-              : "Pick coins and notes to build the exact amount."}
-          </CardDescription>
+          <CardDescription>{t("bazaarSub")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
           <div className="flex items-center gap-4 rounded-xl border-2 border-primary/30 bg-card p-4">
@@ -205,19 +202,21 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
               {item.emoji}
             </span>
             <div>
-              <p className="text-lg font-bold">{item.name[language]}</p>
+              <p className="text-lg font-bold">{pickLang(item.name, lang)}</p>
               <p className="text-sm text-muted-foreground">
-                {T.price[language]}: ₹{item.unitPrice} x {item.quantity}
+                {t("priceLabel")}: ₹{item.unitPrice} x {item.quantity}
               </p>
             </div>
-            <Badge className="ml-auto text-base">₹{target}</Badge>
+            <Badge className="ml-auto text-base">
+              {t("targetAmount")}: ₹{target}
+            </Badge>
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-semibold">{T.yourAmount[language]}</p>
+            <p className="mb-2 text-sm font-semibold">₹ {t("amountYouGave")}</p>
             <div className="flex min-h-28 flex-wrap content-start gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-muted/40 p-3">
               {tokens.length === 0 && (
-                <p className="m-auto text-xs text-muted-foreground">{T.tapHint[language]}</p>
+                <p className="m-auto text-xs text-muted-foreground">{t("tapCoinsHint")}</p>
               )}
               {tokens.map((t) => (
                 <span
@@ -236,15 +235,13 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
 
           <div className="flex flex-wrap items-center gap-3">
             <p className={`text-lg font-bold ${over ? "text-destructive" : ""}`}>
-              {T.total[language]}: ₹{currentTotal} / ₹{target}
+              {t("yourTotal")}: ₹{currentTotal} / ₹{target}
             </p>
             <Button variant="outline" size="sm" onClick={() => { setTokens([]); setWon(false); }}>
-              {T.reset[language]}
+              🔄 {t("resetLabel")}
             </Button>
             {over && (
-              <span className="text-xs text-destructive">
-                {language === "Hindi" ? "राशि अधिक हो गई — हटाएँ दबाएँ।" : "Too much — tap reset."}
-              </span>
+              <span className="text-xs text-destructive">{t("tooMuch")}</span>
             )}
           </div>
 
@@ -270,7 +267,7 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
                 >
                   ₹{d.value}
                 </span>
-                {d.label[language]}
+                {pickLang(d.label, lang)}
               </button>
             ))}
           </div>
@@ -279,9 +276,9 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
 
       <CelebrationSplash
         open={won}
-        title={T.celebrate[language]}
-        subtitle={T.celebrateSub[language]}
-        actionLabel={language === "Hindi" ? "अगली वस्तु" : "Next item"}
+        title={t("excellentWork")}
+        subtitle={t("countedExact")}
+        actionLabel={t("nextItem")}
         onAction={nextItem}
       />
     </>
@@ -292,13 +289,8 @@ function BazaarGame({ language, classLevel }: { language: GameLanguage; classLev
 
 type Metrics = { water: number; nutrients: number; pest: number };
 
-function EcosystemGame({
-  language,
-  crop,
-}: {
-  language: GameLanguage;
-  crop: (typeof CROPS)[string];
-}) {
+function EcosystemGame({ lang, crop }: { lang: UiLang; crop: (typeof CROPS)[string] }) {
+  const { t } = useI18n();
   const [metrics, setMetrics] = useState<Metrics>({ water: 0, nutrients: 0, pest: 0 });
   const [moves, setMoves] = useState(0);
   const { userId } = useApp();
@@ -346,9 +338,9 @@ function EcosystemGame({
       <Card>
         <CardHeader className="bg-primary/5">
           <CardTitle className="flex items-center gap-2">
-            🚜 {language === "Hindi" ? "किसान का पारिस्थितिकी संतुलन" : "Farmer's Ecosystem Balance"}
+            🚜 {t("ecoTitle")}
           </CardTitle>
-          <CardDescription>{T.goal[language]}</CardDescription>
+          <CardDescription>{t("ecoGoal")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
           <div className="flex items-center gap-4 rounded-xl border-2 border-primary/30 p-4">
@@ -356,15 +348,15 @@ function EcosystemGame({
               {crop.emoji}
             </span>
             <div>
-              <p className="text-lg font-bold">{crop.name[language]}</p>
-              <p className="text-sm text-muted-foreground">{crop.hint[language]}</p>
+              <p className="text-lg font-bold">{pickLang(crop.name, lang)}</p>
+              <p className="text-sm text-muted-foreground">{pickLang(crop.hint, lang)}</p>
             </div>
           </div>
 
           <div className="space-y-4">
-            <MetricBar label={T.water[language]} value={metrics.water} tone="bg-sky-500" />
-            <MetricBar label={T.nutrients[language]} value={metrics.nutrients} tone="bg-amber-600" />
-            <MetricBar label={T.pest[language]} value={metrics.pest} tone="bg-emerald-600" />
+            <MetricBar label={t("waterReq")} value={metrics.water} tone="bg-sky-500" />
+            <MetricBar label={t("soilNutrients")} value={metrics.nutrients} tone="bg-amber-600" />
+            <MetricBar label={t("pestProtection")} value={metrics.pest} tone="bg-emerald-600" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -378,18 +370,18 @@ function EcosystemGame({
                 <span className="text-3xl" aria-hidden>
                   {a.emoji}
                 </span>
-                <p className="mt-2 text-sm font-semibold">{a.label[language]}</p>
-                <p className="text-xs text-muted-foreground">{a.note[language]}</p>
+                <p className="mt-2 text-sm font-semibold">{pickLang(a.label, lang)}</p>
+                <p className="text-xs text-muted-foreground">{pickLang(a.note, lang)}</p>
               </button>
             ))}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="secondary">
-              {language === "Hindi" ? "चालें" : "Moves"}: {moves}
+              {t("movesLabel")}: {moves}
             </Badge>
             <Button variant="outline" size="sm" onClick={reset}>
-              {T.reset[language]}
+              🔄 {t("resetLabel")}
             </Button>
           </div>
         </CardContent>
@@ -397,13 +389,9 @@ function EcosystemGame({
 
       <CelebrationSplash
         open={balanced}
-        title={T.balanced[language]}
-        subtitle={
-          language === "Hindi"
-            ? `आपने ${moves} चालों में फसल को संतुलित किया।`
-            : `You balanced the crop in ${moves} moves.`
-        }
-        actionLabel={T.playAgain[language]}
+        title={t("cropBalanced")}
+        subtitle={`${t("balancedInPrefix")} ${moves} ${t("movesSuffix")}.`}
+        actionLabel={t("playAgain")}
         onAction={reset}
       />
     </>

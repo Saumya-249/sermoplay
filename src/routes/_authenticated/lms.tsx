@@ -220,7 +220,6 @@ function ResourceCard({ resource }: { resource: LmsResource }) {
 
 function FlashcardDeck({ resource }: { resource: LmsResource }) {
   const { t, lang } = useI18n();
-  const L = (s: string) => localizeGameText(s, lang);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const cards = resource.flashcards;

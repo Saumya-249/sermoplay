@@ -32,6 +32,7 @@ function Dashboard() {
   const { userId, online, role, guest } = useApp();
   const { t, lang } = useI18n();
   const showSync = canAccess(role, "/sync");
+  const isAdmin = role === "admin";
   const games = WORKING_GAME_LIBRARY;
 
   const pending = useQuery({
@@ -79,14 +80,17 @@ function Dashboard() {
         )}
       </div>
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
-        <Card className="min-w-0 lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t("readyOffline")}</CardTitle>
-            <CardDescription className="text-balance">{t("readyOfflineSub")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {games.slice(0, 6).map((g) => (
+      {isAdmin ? (
+        <AdminAnalyticsBody />
+      ) : (
+        <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+          <Card className="min-w-0 lg:col-span-2">
+            <CardHeader>
+              <CardTitle>{t("readyOffline")}</CardTitle>
+              <CardDescription className="text-balance">{t("readyOfflineSub")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {games.slice(0, 6).map((g) => (
                 <div
                   key={g.id}
                   className="flex items-center gap-3 rounded-lg border bg-card p-3"
@@ -107,45 +111,47 @@ function Dashboard() {
                     </Link>
                   </Button>
                 </div>
-            ))}
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/library">{t("browseLibrary")}</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="min-w-0">
-          <CardHeader>
-            <CardTitle>{t("syncStatus")}</CardTitle>
-            <CardDescription>{online ? t("connectedCloud") : t("workingOffline")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                <span>{t("deviceStorage")}</span>
-                <span>
-                  {storageUsed.toFixed(1)} / {quota} MB
-                </span>
-              </div>
-              <Progress value={(storageUsed / quota) * 100} />
-            </div>
-            <div className="rounded-lg border p-3 text-sm">
-              <p className="font-medium">{pending.data?.length ?? 0} {t("recordsQueued")}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("syncNote")}
-              </p>
-            </div>
-            {showSync && (
-              <Button asChild variant="secondary" className="w-full">
-                <Link to="/sync">{t("openSyncPanel")}</Link>
+              ))}
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/library">{t("browseLibrary")}</Link>
               </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+
+          <Card className="min-w-0">
+            <CardHeader>
+              <CardTitle>{t("syncStatus")}</CardTitle>
+              <CardDescription>{online ? t("connectedCloud") : t("workingOffline")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                  <span>{t("deviceStorage")}</span>
+                  <span>
+                    {storageUsed.toFixed(1)} / {quota} MB
+                  </span>
+                </div>
+                <Progress value={(storageUsed / quota) * 100} />
+              </div>
+              <div className="rounded-lg border p-3 text-sm">
+                <p className="font-medium">{pending.data?.length ?? 0} {t("recordsQueued")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("syncNote")}
+                </p>
+              </div>
+              {showSync && (
+                <Button asChild variant="secondary" className="w-full">
+                  <Link to="/sync">{t("openSyncPanel")}</Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
+
 
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (

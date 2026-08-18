@@ -1,21 +1,33 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/app-context";
-import { useI18n } from "@/lib/i18n";
-import { loadPendingQueue } from "@/lib/pending-sync";
-import { TeacherAnalytics } from "@/components/teacher-analytics";
-import { useEffect, useState } from "react";
+import { useI18n, type I18nKey } from "@/lib/i18n";
 import {
-  STUDENT_ROWS,
-  WEAK_SUBJECT_DISTRIBUTION,
-  GLOBAL_AVG_SCORE,
-  AVG_TIMED_GAME_SEC,
-} from "@/lib/admin-analytics";
+  CURRICULUM_AUDIT,
+  GLOBAL_ACCURACY,
+  LANGUAGE_ENGAGEMENT,
+  OPS_LOG,
+  STUDENTS,
+  TEACHERS,
+  TOTAL_ASSESSMENTS,
+  TOTAL_ASSETS,
+} from "@/lib/school-data";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: ({ context }) => {
@@ -23,10 +35,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   },
   head: () => ({
     meta: [
-      { title: "Admin Analytics Dashboard | Sermo Play" },
-      { name: "description", content: "Administrator analytics engine: student performance tracking, teacher activity monitoring, LMS deployment counters and global configuration." },
-      { property: "og:title", content: "Admin Analytics Dashboard | Sermo Play" },
-      { property: "og:description", content: "Administrator analytics engine: student performance tracking, teacher activity monitoring, LMS deployment counters and global configuration." },
+      { title: "School & Learning Management Panel | Sermo Play" },
+      { name: "description", content: "Principal's command board: student registry, teacher workload, curriculum coverage audit and regional language engagement in seven Indian languages." },
+      { property: "og:title", content: "School & Learning Management Panel | Sermo Play" },
+      { property: "og:description", content: "Principal's command board: student registry, teacher workload, curriculum coverage audit and regional language engagement." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -34,24 +46,13 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-function Bar({ value, tone = "primary" }: { value: number; tone?: "primary" | "warn" }) {
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-muted">
-      <div
-        className={`h-full rounded-full ${tone === "warn" ? "bg-amber-500" : "bg-primary"}`}
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-      />
-    </div>
-  );
-}
-
-function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; value: string; sub: string }) {
+function StatTile({ emoji, label, value, sub }: { emoji: string; label: string; value: string; sub: string }) {
   return (
     <Card className="border-2">
       <CardHeader className="pb-2">
-        <CardDescription className="flex items-center gap-2 text-xs font-medium">
-          <span aria-hidden>{emoji}</span>
-          <span className="min-w-0 truncate">{label}</span>
+        <CardDescription className="flex items-start gap-2 text-xs font-medium leading-snug">
+          <span aria-hidden className="text-base">{emoji}</span>
+          <span className="min-w-0">{label}</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -64,251 +65,283 @@ function StatCard({ emoji, label, value, sub }: { emoji: string; label: string; 
 
 function AdminPage() {
   const { online } = useApp();
-  const { lang } = useI18n();
-  const hi = lang === "hi";
-  const [logs, setLogs] = useState<string[]>([]);
-  const [flags, setFlags] = useState({ aiGeneration: true, offlineDownloads: true, publicLibrary: true });
+  const { lang, t } = useI18n();
+  const [query, setQuery] = useState("");
 
-  const profiles = useQuery({
-    queryKey: ["admin-profiles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, email, role, school, created_at")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  const cls = (n: number) => t("adClassFmt", { n });
+  const ago = (d: number) => (d === 0 ? t("adToday") : d === 1 ? t("adYesterday") : t("adDaysAgo", { n: d }));
 
-  const quizCount = useQuery({
-    queryKey: ["admin-quiz-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("quizzes").select("id", { count: "exact", head: true });
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
+  const curriculumData = useMemo(
+    () =>
+      CURRICULUM_AUDIT.map((c) => ({
+        name: t(c.subject as I18nKey),
+        chapters: c.chapters,
+        quizzes: c.quizzes,
+        coverage: Math.round((c.quizzes / c.chapters) * 100),
+      })),
+    [lang, t],
+  );
 
-  useEffect(() => {
-    const queue = loadPendingQueue();
-    setLogs([
-      `[${new Date().toLocaleTimeString()}] Network mode: ${online ? "online" : "offline"}`,
-      `[${new Date().toLocaleTimeString()}] Local sync queue: ${queue.length} record(s) pending`,
-      `[${new Date().toLocaleTimeString()}] Analytics engine rendered from cached dataset`,
-      `[${new Date().toLocaleTimeString()}] Admin console session opened`,
-    ]);
-  }, [online]);
+  const langData = useMemo(
+    () => LANGUAGE_ENGAGEMENT.map((l) => ({ name: t(l.key as I18nKey), value: l.share, color: l.color })),
+    [lang, t],
+  );
 
-  const teachers = (profiles.data ?? []).filter((p) => p.role === "teacher");
-  const liveQuizzes = quizCount.data ?? 0;
-  const totalQuizzes = liveQuizzes;
-  const activeEducators = teachers.length;
+  const best = [...curriculumData].sort((a, b) => b.coverage - a.coverage)[0];
+  const worst = [...curriculumData].sort((a, b) => a.coverage - b.coverage)[0];
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return STUDENTS;
+    return STUDENTS.filter(
+      (s) => s.name.toLowerCase().includes(q) || cls(s.classNo).toLowerCase().includes(q) || String(s.classNo) === q,
+    );
+  }, [query, lang]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{hi ? "🛡️ एडमिन एनालिटिक्स डैशबोर्ड" : "🛡️ Administrator Analytics Dashboard"}</h1>
-        <p className="text-sm text-muted-foreground">
-          {hi
-            ? "छात्र प्रदर्शन, शिक्षक गतिविधि और वैश्विक कॉन्फ़िगरेशन का केंद्रीकृत दृश्य।"
-            : "Centralized, data-driven view of student performance, teacher activity and global configuration."}
-        </p>
+    <div key={lang} className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-bold">🏫 {t("adTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("adSubtitle")}</p>
         {!online && (
-          <Badge variant="secondary" className="mt-2">
-            {hi ? "ऑफ़लाइन — कैश्ड एनालिटिक्स" : "Offline — cached analytics snapshot"}
-          </Badge>
+          <Badge variant="secondary" className="mt-2">{t("adOffline")}</Badge>
         )}
+      </header>
+
+      {/* 1. Core overview tiles */}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile emoji="👥" label={t("adStudents")} value={String(STUDENTS.length)} sub={t("adStudentsSub")} />
+        <StatTile emoji="👩‍🏫" label={t("adTeachers")} value={String(TEACHERS.length)} sub={t("adTeachersSub")} />
+        <StatTile emoji="📚" label={t("adAssets")} value={String(TOTAL_ASSETS)} sub={t("adAssetsSub")} />
+        <StatTile emoji="📈" label={t("adAccuracy")} value={`${GLOBAL_ACCURACY}%`} sub={t("adAccuracySub")} />
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        {/* 2. Curriculum audit */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg">📊 {t("adCurriculumTitle")}</CardTitle>
+            <CardDescription>{t("adCurriculumDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={curriculumData} margin={{ top: 8, right: 8, left: -18, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: "hsl(var(--popover-foreground))",
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="chapters" name={t("adChapters")} fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="quizzes" name={t("adQuizzes")} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {curriculumData.map((c) => (
+                <div key={c.name} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="truncate">{c.name}</span>
+                    <span className="tabular-nums">{c.coverage}%</span>
+                  </div>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${c.coverage}%` }} />
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+                    {c.quizzes} / {c.chapters} · {t("adCoverage")}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline">✅ {t("adStrongest")}: {best?.name}</Badge>
+              <Badge variant="secondary">⚠️ {t("adWeakest")}: {worst?.name}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 3. Language engagement */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg">🗣️ {t("adLangTitle")}</CardTitle>
+            <CardDescription>{t("adLangDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={langData} dataKey="value" nameKey="name" innerRadius="52%" outerRadius="80%" paddingAngle={2}>
+                    {langData.map((d) => (
+                      <Cell key={d.name} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v: number, n: string) => [`${v}%`, n]}
+                    contentStyle={{
+                      background: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: "hsl(var(--popover-foreground))",
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-2">
+              {langData.map((d) => (
+                <div key={d.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-xs">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: d.color }} />
+                    <span className="truncate">{d.name}</span>
+                  </div>
+                  <span className="tabular-nums font-medium">{d.value}%</span>
+                </div>
+              ))}
+              <p className="pt-1 text-[11px] text-muted-foreground tabular-nums">
+                {TOTAL_ASSESSMENTS} {t("adAssessments")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* 3. Graphical summary counter cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          emoji="📊"
-          label={hi ? "कुल एआई क्विज़ बनाए गए" : "Total AI Quizzes Generated"}
-          value={String(totalQuizzes)}
-          sub={online ? (hi ? "लाइव डेटाबेस गणना" : "live database count") : hi ? "कैश्ड कुल" : "cached total"}
-        />
-        <StatCard
-          emoji="📈"
-          label={hi ? "वैश्विक छात्र औसत स्कोर" : "Global Student Avg Score"}
-          value={`${GLOBAL_AVG_SCORE}%`}
-          sub={`${STUDENT_ROWS.length} ${hi ? "ट्रैक किए गए छात्र" : "tracked students"}`}
-        />
-        <StatCard
-          emoji="👩‍🏫"
-          label={hi ? "कुल सक्रिय शिक्षक" : "Total Active Educators"}
-          value={String(activeEducators)}
-          sub={hi ? "पंजीकृत शिक्षक खाते" : "registered teacher accounts"}
-        />
-        <StatCard
-          emoji="⏱️"
-          label={hi ? "टाइम्ड गेम्स में औसत समय" : "Avg Time Spent in Timed Games"}
-          value={`${AVG_TIMED_GAME_SEC}s`}
-          sub={hi ? "प्रति मिनी-गेम सत्र" : "per mini-game session"}
-        />
-      </div>
-
-      {/* 1. Student performance tracking */}
+      {/* 4. Student registry */}
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>{hi ? "🎓 छात्र प्रदर्शन ट्रैकिंग" : "🎓 Student Performance Tracking"}</CardTitle>
-          <CardDescription>
-            {hi
-              ? "औसत स्कोर, प्रति मिनी-गेम समय, कक्षा-वार पूर्णता दर और कमज़ोर विषय।"
-              : "Average quiz scores, time per mini-game, completion rates by grade and weakest subject areas."}
-          </CardDescription>
+          <CardTitle className="text-lg">🎓 {t("adRegistryTitle")}</CardTitle>
+          <CardDescription>{t("adRegistryDesc")}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="w-full overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead>
-                <tr className="bg-muted/60 text-left">
-                  <th className="border-b p-3 font-semibold">{hi ? "छात्र" : "Student"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "कक्षा" : "Grade"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "औसत क्विज़ स्कोर" : "Avg Quiz Score"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "समय / मिनी-गेम" : "Time / Mini-Game"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "पूर्णता दर" : "Completion Rate"}</th>
-                  <th className="border-b p-3 font-semibold">{hi ? "कमज़ोर विषय" : "Weakest Subject"}</th>
+        <CardContent className="space-y-3">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("adSearch")}
+            aria-label={t("adSearch")}
+            className="max-w-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("adShowing", { count: filtered.length, total: STUDENTS.length })}
+          </p>
+          <div className="max-h-[420px] w-full overflow-auto rounded-lg border">
+            <table className="w-full min-w-[680px] border-collapse text-sm">
+              <thead className="sticky top-0 z-10 bg-muted">
+                <tr className="text-left">
+                  <th className="border-b p-3 font-semibold">{t("adColStudent")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColClass")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColAvg")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColGames")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColLastActive")}</th>
                 </tr>
               </thead>
               <tbody>
-                {STUDENT_ROWS.map((s) => (
-                  <tr key={s.name} className="odd:bg-background even:bg-muted/20">
-                    <td className="border-b p-3 font-medium">{hi ? s.nameHi : s.name}</td>
-                    <td className="border-b p-3">{s.classLevel}</td>
+                {filtered.map((s) => (
+                  <tr key={s.id} className="odd:bg-background even:bg-muted/20">
+                    <td className="border-b p-3 font-medium">{s.name}</td>
+                    <td className="border-b p-3">{cls(s.classNo)}</td>
                     <td className="border-b p-3">
                       <div className="flex items-center gap-2">
                         <span className="w-10 tabular-nums">{s.avgScore}%</span>
-                        <Bar value={s.avgScore} />
+                        <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full rounded-full ${s.avgScore >= 75 ? "bg-primary" : "bg-amber-500"}`}
+                            style={{ width: `${s.avgScore}%` }}
+                          />
+                        </div>
                       </div>
                     </td>
-                    <td className="border-b p-3 tabular-nums">{s.timePerGameSec}s</td>
-                    <td className="border-b p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-10 tabular-nums">{s.completionRate}%</span>
-                        <Bar value={s.completionRate} />
-                      </div>
+                    <td className="border-b p-3 tabular-nums">{s.gamesPlayed}</td>
+                    <td className="border-b p-3 text-muted-foreground">{ago(s.lastActiveDays)}</td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-sm text-muted-foreground">
+                      {t("adNoResults")}
                     </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 5. Teacher workload */}
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle className="text-lg">👩‍🏫 {t("adWorkloadTitle")}</CardTitle>
+          <CardDescription>{t("adWorkloadDesc")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead>
+                <tr className="bg-muted text-left">
+                  <th className="border-b p-3 font-semibold">{t("adColTeacher")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColSubject")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColQuizzes")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColDecks")}</th>
+                  <th className="border-b p-3 font-semibold">{t("adColWorksheets")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TEACHERS.map((tr) => (
+                  <tr key={tr.id} className="odd:bg-background even:bg-muted/20">
+                    <td className="border-b p-3 font-medium">{tr.name}</td>
                     <td className="border-b p-3">
-                      <Badge variant="outline">
-                        {hi ? s.weakestSubjectHi : s.weakestSubject} · {s.incorrectShare}%
-                      </Badge>
+                      <Badge variant="outline">{t(tr.subject as I18nKey)}</Badge>
                     </td>
+                    <td className="border-b p-3 tabular-nums">{tr.quizzes}</td>
+                    <td className="border-b p-3 tabular-nums">{tr.decks}</td>
+                    <td className="border-b p-3 tabular-nums">{tr.worksheets}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border p-4">
-              <h3 className="mb-3 text-sm font-semibold">
-                {hi ? "कक्षा 1–8 पूर्णता दर" : "Completion Rates by Grade Level (Class 1–8)"}
-              </h3>
-              <div className="space-y-2">
-                {STUDENT_ROWS.map((s) => (
-                  <div key={s.classLevel} className="grid grid-cols-[70px_1fr_44px] items-center gap-2 text-xs">
-                    <span className="truncate">{s.classLevel}</span>
-                    <Bar value={s.completionRate} />
-                    <span className="text-right tabular-nums">{s.completionRate}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-lg border p-4">
-              <h3 className="mb-3 text-sm font-semibold">
-                {hi ? "गलत उत्तरों का विषय-वार वितरण" : "Weakest Areas — Incorrect Answer Distribution"}
-              </h3>
-              <div className="space-y-2">
-                {WEAK_SUBJECT_DISTRIBUTION.map((w) => (
-                  <div key={w.subject} className="grid grid-cols-[110px_1fr_44px] items-center gap-2 text-xs">
-                    <span className="truncate">{hi ? w.subjectHi : w.subject}</span>
-                    <Bar value={w.share} tone="warn" />
-                    <span className="text-right tabular-nums">{w.share}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* 2. Teacher activity monitoring — live telemetry */}
+      {/* 6. Operations log */}
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>{hi ? "👩‍🏫 शिक्षक गतिविधि निगरानी (लाइव)" : "👩‍🏫 Teacher Activity Monitoring (Live)"}</CardTitle>
-          <CardDescription>
-            {hi
-              ? "सक्रिय मॉड्यूल, साप्ताहिक छात्र पूर्णताएँ और विषयवार सटीकता — सीधे लाइव लॉग से।"
-              : "Active modules, weekly student completions and accuracy by topic — computed from live logs."}
-          </CardDescription>
+          <CardTitle className="text-lg">🕒 {t("adLogTitle")}</CardTitle>
+          <CardDescription>{t("adLogDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <TeacherAnalytics hi={hi} />
+          <ol className="space-y-3">
+            {OPS_LOG.map((entry) => {
+              const vars: Record<string, string | number> = { name: entry.name };
+              if ("cls" in entry) vars["cls"] = cls(entry.cls);
+              if ("subject" in entry) vars["subject"] = t(entry.subject as I18nKey);
+              if ("topic" in entry) vars["topic"] = t(entry.topic as I18nKey);
+              if ("score" in entry) vars["score"] = entry.score;
+              if ("game" in entry) vars["game"] = t(entry.game as I18nKey);
+              return (
+                <li key={entry.id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-lg border p-3">
+                  <span aria-hidden className="mt-0.5 text-base">
+                    {entry.kind === "adLogScore" ? "🏅" : entry.kind === "adLogJoined" ? "✨" : "📝"}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm leading-snug">{t(entry.kind as I18nKey, vars)}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{ago(entry.days)}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </CardContent>
       </Card>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{hi ? "शिक्षक अनुमोदन कतार" : "Teacher approval queue"}</CardTitle>
-            <CardDescription>{teachers.length} {hi ? "शिक्षक खाते" : "teacher accounts"}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {profiles.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-            {teachers.length === 0 && !profiles.isLoading && (
-              <p className="text-sm text-muted-foreground">{hi ? "कोई प्रतीक्षारत खाता नहीं।" : "No pending accounts."}</p>
-            )}
-            {teachers.map((p) => (
-              <div key={p.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{p.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{p.email}</p>
-                </div>
-                <Badge variant="secondary" className="shrink-0">{p.role}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{hi ? "वैश्विक कॉन्फ़िगरेशन" : "Global configuration"}</CardTitle>
-            <CardDescription>{hi ? "सिस्टम-व्यापी स्विच" : "System-wide switches"}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {(
-              [
-                ["aiGeneration", hi ? "एआई क्विज़ जनरेशन" : "AI quiz generation"],
-                ["offlineDownloads", hi ? "ऑफ़लाइन डाउनलोड" : "Offline downloads"],
-                ["publicLibrary", hi ? "सार्वजनिक लाइब्रेरी" : "Public game library"],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key} className="flex flex-wrap items-center justify-between gap-2">
-                <Label htmlFor={key}>{label}</Label>
-                <Switch
-                  id={key}
-                  checked={flags[key]}
-                  onCheckedChange={(v) => setFlags((f) => ({ ...f, [key]: v }))}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{hi ? "सिस्टम लॉग" : "System logs"}</CardTitle>
-            <CardDescription>{hi ? "इस सत्र की गतिविधि" : "Activity from this session"}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="max-h-64 overflow-auto rounded-lg border bg-muted p-3 text-xs leading-relaxed">
-              {logs.join("\n")}
-            </pre>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

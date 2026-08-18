@@ -297,6 +297,18 @@ function EcosystemGame({
   );
 
   useEffect(() => {
+    if (!balanced) return;
+    void logGameSession({
+      userId,
+      moduleKey: "farmer-ecosystem-balance",
+      moduleLabel: "Farmer's Ecosystem Balance",
+      subject: "Science",
+      classLevel: crop.classLevel ?? "Class 3",
+      score: Math.max(1, 30 - moves),
+    });
+  }, [balanced, userId, moves, crop]);
+
+  useEffect(() => {
     setMetrics({ water: 0, nutrients: 0, pest: 0 });
     setMoves(0);
   }, [crop.id]);

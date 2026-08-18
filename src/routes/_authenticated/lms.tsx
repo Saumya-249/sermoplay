@@ -49,7 +49,12 @@ const ALL = "all";
 function LmsHubPage() {
   const { t, lang } = useI18n();
   const L = (s: string) => localizeGameText(s, lang);
-  const [language, setLanguage] = useState<string>("English");
+  const [language, setLanguage] = useState<string>(lang === "hi" ? "Hindi" : "English");
+
+  // Content language follows the global UI language so cards never lag behind.
+  useEffect(() => {
+    setLanguage(lang === "hi" ? "Hindi" : "English");
+  }, [lang]);
   const { registeredClass, classLocked } = useApp();
   const lockedClass = classLocked ? registeredClass : null;
   const [classLevel, setClassLevel] = useState<string>(ALL);

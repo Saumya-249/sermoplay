@@ -125,7 +125,8 @@ function Shell() {
   async function handleLogout() {
     await supabase.auth.signOut();
     localStorage.removeItem("sermo-lang");
-    navigate({ to: "/auth", replace: true });
+    localStorage.removeItem("rglb-online");
+    navigate({ to: "/", replace: true });
   }
 
   return (

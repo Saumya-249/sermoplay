@@ -303,10 +303,10 @@ function EcosystemGame({
       moduleKey: "farmer-ecosystem-balance",
       moduleLabel: "Farmer's Ecosystem Balance",
       subject: "Science",
-      classLevel: crop.classLevel ?? "Class 3",
+      classLevel: "Class 3",
       score: Math.max(1, 30 - moves),
     });
-  }, [balanced, userId, moves, crop]);
+  }, [balanced, userId, moves]);
 
   useEffect(() => {
     setMetrics({ water: 0, nutrients: 0, pest: 0 });

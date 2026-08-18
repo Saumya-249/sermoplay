@@ -6,13 +6,13 @@ import {
   DENOMINATIONS,
   ECO_ACTIONS,
   GAME_CLASSES,
-  GAME_LANGUAGES,
   GAME_SUBJECTS,
-  T,
-  type GameLanguage,
+  pickLang,
 } from "@/lib/contextual-games";
 import { CelebrationSplash } from "@/components/games/celebration";
 import { useApp } from "@/lib/app-context";
+import { LANGUAGES, useI18n, type UiLang } from "@/lib/i18n";
+import { localizeGameText } from "@/lib/game-i18n";
 import { logGameSession } from "@/lib/telemetry";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/games")({
 
 function GamesHubPage() {
   const { registeredClass, classLocked } = useApp();
-  const [language, setLanguage] = useState<GameLanguage>("English");
+  const { t, lang, setLang } = useI18n();
   const [subject, setSubject] = useState<string>("Math");
   const [classLevel, setClassLevel] = useState<string>(
     classLocked && registeredClass ? registeredClass : "Class 3",
@@ -63,37 +63,47 @@ function GamesHubPage() {
   const crop = CROPS[classLevel] ?? CROPS["Class 3"]!;
 
   return (
-    <div className="space-y-6">
+    <div key={lang} className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{T.hubTitle[language]}</h1>
-        <p className="text-sm text-muted-foreground">
-          {language === "Hindi"
-            ? "बिना इंटरनेट चलने वाले चित्रात्मक कक्षा खेल।"
-            : "Graphic-driven classroom games that run fully offline."}
-        </p>
+        <h1 className="text-2xl font-bold">{t("gamesHubTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("gamesHubSub")}</p>
       </div>
 
       <Card>
         <CardContent className="grid gap-3 pt-6 sm:grid-cols-3">
-          <Filter label={language === "Hindi" ? "भाषा" : "Language"} value={language} onChange={(v) => setLanguage(v as GameLanguage)} options={[...GAME_LANGUAGES]} />
-          <Filter label={language === "Hindi" ? "विषय" : "Subject"} value={subject} onChange={setSubject} options={[...GAME_SUBJECTS]} />
-          <Filter label={language === "Hindi" ? "कक्षा" : "Class"} value={classLevel} onChange={setClassLevel} options={[...GAME_CLASSES]} />
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">{t("language")}</p>
+            <Select value={lang} onValueChange={(v) => setLang(v as UiLang)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((l) => (
+                  <SelectItem key={l.code} value={l.code}>
+                    {l.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Filter label={t("subjectLabel")} value={subject} onChange={setSubject} options={[...GAME_SUBJECTS]} lang={lang} />
+          <Filter label={t("classLabel")} value={classLevel} onChange={setClassLevel} options={[...GAME_CLASSES]} lang={lang} />
         </CardContent>
       </Card>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <Badge variant="secondary" className="gap-1">
-          <WifiOff className="size-3" /> {language === "Hindi" ? "पूर्णतः ऑफलाइन" : "Fully offline"}
+          <WifiOff className="size-3" /> {t("fullyOffline")}
         </Badge>
         <Badge variant="outline" className="gap-1">
-          <Gamepad2 className="size-3" /> {subject} · {classLevel} · {language}
+          <Gamepad2 className="size-3" /> {localizeGameText(subject, lang)} · {localizeGameText(classLevel, lang)}
         </Badge>
       </div>
 
       {showBazaar ? (
-        <BazaarGame language={language} classLevel={classLevel} />
+        <BazaarGame lang={lang} classLevel={classLevel} />
       ) : (
-        <EcosystemGame language={language} crop={crop} />
+        <EcosystemGame lang={lang} crop={crop} />
       )}
     </div>
   );
@@ -104,11 +114,13 @@ function Filter({
   value,
   onChange,
   options,
+  lang,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
+  lang: UiLang;
 }) {
   return (
     <div className="space-y-1.5">
@@ -120,7 +132,7 @@ function Filter({
         <SelectContent>
           {options.map((o) => (
             <SelectItem key={o} value={o}>
-              {o}
+              {localizeGameText(o, lang)}
             </SelectItem>
           ))}
         </SelectContent>

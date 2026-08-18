@@ -131,6 +131,20 @@ export const ECO_ACTIONS: EcoAction[] = [
   },
 ];
 
+import type { UiLang } from "@/lib/i18n";
+import { localizeGameText } from "@/lib/game-i18n";
+
+/**
+ * Resolve an English/Hindi content record for any of the 7 UI languages.
+ * Devanagari languages read the Hindi copy; other scripts get the English copy
+ * passed through the word-level localizer.
+ */
+export function pickLang(rec: Record<GameLanguage, string>, lang: UiLang): string {
+  if (lang === "hi" || lang === "mr") return rec.Hindi;
+  if (lang === "en") return rec.English;
+  return localizeGameText(rec.English, lang);
+}
+
 export const T = {
   hubTitle: { English: "Interactive Contextual Games Hub", Hindi: "इंटरैक्टिव प्रासंगिक खेल केंद्र" },
   yourAmount: { English: "₹ Amount you gave", Hindi: "₹ आपकी दी गई राशि" },

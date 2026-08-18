@@ -116,7 +116,7 @@ function AdminPage() {
         <StatTile emoji="📈" label={t("adAccuracy")} value={`${GLOBAL_ACCURACY}%`} sub={t("adAccuracySub")} />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div id="curriculum" className="grid scroll-mt-24 gap-6 xl:grid-cols-2">
         {/* 2. Curriculum audit */}
         <Card className="border-2">
           <CardHeader>
@@ -216,7 +216,7 @@ function AdminPage() {
       </div>
 
       {/* 4. Student registry */}
-      <Card className="border-2">
+      <Card id="students" className="scroll-mt-24 border-2">
         <CardHeader>
           <CardTitle className="text-lg">🎓 {t("adRegistryTitle")}</CardTitle>
           <CardDescription>{t("adRegistryDesc")}</CardDescription>
@@ -277,7 +277,7 @@ function AdminPage() {
       </Card>
 
       {/* 5. Teacher workload */}
-      <Card className="border-2">
+      <Card id="teachers" className="scroll-mt-24 border-2">
         <CardHeader>
           <CardTitle className="text-lg">👩‍🏫 {t("adWorkloadTitle")}</CardTitle>
           <CardDescription>{t("adWorkloadDesc")}</CardDescription>

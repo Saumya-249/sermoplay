@@ -117,9 +117,8 @@ function LmsHubPage() {
         </CardContent>
       </Card>
 
-      <p className="text-sm text-muted-foreground">
-        {t("lmsShowing")} <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
-        {t("lmsStudyGuides")}
+      <p className="text-sm font-medium text-muted-foreground">
+        {t("lmsShowingGuides", { count: filtered.length })}
       </p>
 
       {filtered.length === 0 ? (

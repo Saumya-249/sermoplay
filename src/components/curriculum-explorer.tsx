@@ -89,6 +89,7 @@ export function CurriculumExplorer() {
                   onClick={() => {
                     setSubject(s);
                     setResult(null);
+                    setOpenChapter(null);
                   }}
                 >
                   {hi ? (SUBJECT_HI[s] ?? s) : s}
@@ -110,6 +111,7 @@ export function CurriculumExplorer() {
                 onClick={() => {
                   setLanguage(l.value);
                   setResult(null);
+                  setOpenChapter(null);
                 }}
               >
                 {l.label}

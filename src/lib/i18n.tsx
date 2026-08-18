@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { MODULE_DICTS, MODULE_EN } from "@/lib/i18n-modules";
+import { LMS_DICTS, LMS_EN } from "@/lib/i18n-lms";
 
 export type UiLang = "en" | "hi" | "ta" | "kn" | "bn" | "mr" | "te";
 
@@ -113,7 +114,7 @@ const EN = {
   nextCard: "Next Card",
 } as const;
 
-const EN_ALL = { ...EN, ...MODULE_EN };
+const EN_ALL = { ...EN, ...MODULE_EN, ...LMS_EN };
 
 export type I18nKey = keyof typeof EN_ALL;
 
@@ -489,12 +490,12 @@ const TE: PartialDict = {
 
 const DICTS: Record<UiLang, PartialDict> = {
   en: EN_ALL,
-  hi: { ...HI, ...MODULE_DICTS.hi },
-  ta: { ...TA, ...MODULE_DICTS.ta },
-  kn: { ...KN, ...MODULE_DICTS.kn },
-  bn: { ...BN, ...MODULE_DICTS.bn },
-  mr: { ...MR, ...MODULE_DICTS.mr },
-  te: { ...TE, ...MODULE_DICTS.te },
+  hi: { ...HI, ...MODULE_DICTS.hi, ...LMS_DICTS.hi },
+  ta: { ...TA, ...MODULE_DICTS.ta, ...LMS_DICTS.ta },
+  kn: { ...KN, ...MODULE_DICTS.kn, ...LMS_DICTS.kn },
+  bn: { ...BN, ...MODULE_DICTS.bn, ...LMS_DICTS.bn },
+  mr: { ...MR, ...MODULE_DICTS.mr, ...LMS_DICTS.mr },
+  te: { ...TE, ...MODULE_DICTS.te, ...LMS_DICTS.te },
 };
 
 
@@ -502,8 +503,13 @@ type I18nState = {
   lang: UiLang;
   setLang: (l: UiLang) => void;
   toggleLang: () => void;
-  t: (key: I18nKey) => string;
+  t: (key: I18nKey, vars?: Record<string, string | number>) => string;
 };
+
+function interpolate(template: string, vars?: Record<string, string | number>) {
+  if (!vars) return template;
+  return template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+}
 
 const g = globalThis as typeof globalThis & {
   __sermoI18nCtx?: React.Context<I18nState | null>;
@@ -528,7 +534,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       lang,
       setLang,
       toggleLang: () => setLang(lang === "en" ? "hi" : "en"),
-      t: (key: I18nKey) => DICTS[lang]?.[key] ?? EN_ALL[key],
+      t: (key: I18nKey, vars?: Record<string, string | number>) =>
+        interpolate(DICTS[lang]?.[key] ?? EN_ALL[key], vars),
     }),
     [lang, setLang],
   );
@@ -543,6 +550,7 @@ export function useI18n(): I18nState {
     lang: "en",
     setLang: () => {},
     toggleLang: () => {},
-    t: (key: I18nKey) => EN_ALL[key],
+    t: (key: I18nKey, vars?: Record<string, string | number>) =>
+      interpolate(EN_ALL[key], vars),
   };
 }

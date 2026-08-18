@@ -49,7 +49,12 @@ const ALL = "all";
 function LmsHubPage() {
   const { t, lang } = useI18n();
   const L = (s: string) => localizeGameText(s, lang);
-  const [language, setLanguage] = useState<string>("English");
+  const [language, setLanguage] = useState<string>(lang === "hi" ? "Hindi" : "English");
+
+  // Content language follows the global UI language so cards never lag behind.
+  useEffect(() => {
+    setLanguage(lang === "hi" ? "Hindi" : "English");
+  }, [lang]);
   const { registeredClass, classLocked } = useApp();
   const lockedClass = classLocked ? registeredClass : null;
   const [classLevel, setClassLevel] = useState<string>(ALL);
@@ -117,9 +122,8 @@ function LmsHubPage() {
         </CardContent>
       </Card>
 
-      <p className="text-sm text-muted-foreground">
-        {t("lmsShowing")} <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
-        {t("lmsStudyGuides")}
+      <p className="text-sm font-medium text-muted-foreground">
+        {t("lmsShowingGuides", { count: filtered.length })}
       </p>
 
       {filtered.length === 0 ? (
@@ -202,7 +206,7 @@ function ResourceCard({ resource }: { resource: LmsResource }) {
                 <span className="text-primary" aria-hidden>
                   •
                 </span>
-                <span>{L(point)}</span>
+                <span>{point}</span>
               </li>
             ))}
           </ul>
@@ -216,7 +220,6 @@ function ResourceCard({ resource }: { resource: LmsResource }) {
 
 function FlashcardDeck({ resource }: { resource: LmsResource }) {
   const { t, lang } = useI18n();
-  const L = (s: string) => localizeGameText(s, lang);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const cards = resource.flashcards;
@@ -253,7 +256,7 @@ function FlashcardDeck({ resource }: { resource: LmsResource }) {
             <span className="mb-2 text-[10px] font-bold uppercase tracking-widest text-primary">
               {t("questionLabel")}
             </span>
-            <p className="text-base font-semibold leading-snug">{L(card.front)}</p>
+            <p className="text-base font-semibold leading-snug">{card.front}</p>
             <span className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
               <RotateCw className="size-3" /> {t("tapToFlip")}
             </span>
@@ -262,7 +265,7 @@ function FlashcardDeck({ resource }: { resource: LmsResource }) {
             <span className="mb-2 text-[10px] font-bold uppercase tracking-widest text-accent-foreground/70">
               {t("answerLabel")}
             </span>
-            <p className="text-base font-medium leading-snug">{L(card.back)}</p>
+            <p className="text-base font-medium leading-snug">{card.back}</p>
             <span className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
               <RotateCw className="size-3" /> {t("tapToFlipBack")}
             </span>

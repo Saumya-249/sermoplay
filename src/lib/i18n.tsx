@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { MODULE_DICTS, MODULE_EN } from "@/lib/i18n-modules";
+
 export type UiLang = "en" | "hi" | "ta" | "kn" | "bn" | "mr" | "te";
 
 export const LANGUAGES: { code: UiLang; label: string; short: string }[] = [
@@ -111,9 +113,11 @@ const EN = {
   nextCard: "Next Card",
 } as const;
 
-export type I18nKey = keyof typeof EN;
+const EN_ALL = { ...EN, ...MODULE_EN };
 
-const HI: Record<I18nKey, string> = {
+export type I18nKey = keyof typeof EN_ALL;
+
+const HI: Partial<Record<keyof typeof EN, string>> = {
   appName: "सर्मो प्ले",
   appTagline: "क्षेत्रीय भाषा",
   classroom: "कक्षा",

@@ -1,8 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
+import { useI18n, type UiLang } from "@/lib/i18n";
 import { LANGUAGES, SUBJECTS, CLASSES, DIFFICULTIES } from "@/lib/constants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,11 +58,26 @@ const emptyQuestion = (): Question => ({ prompt: "", options: ["", "", "", ""], 
 type SubjectRow = { subject: string; topic: string };
 const QUESTION_COUNTS = ["5", "10", "15", "20"];
 
+const UI_LANG_TO_NAME: Record<UiLang, string> = {
+  en: "English",
+  hi: "Hindi",
+  ta: "Tamil",
+  kn: "Kannada",
+  bn: "Bengali",
+  mr: "Marathi",
+  te: "Telugu",
+};
+
 function QuizCreator() {
   const { userId, online, queueQuiz } = useApp();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
-  const [language, setLanguage] = useState<string>("English");
+  const { lang: uiLang } = useI18n();
+  const [language, setLanguage] = useState<string>(UI_LANG_TO_NAME[uiLang] ?? "English");
+  // Quiz Creator language always mirrors the global workspace language.
+  useEffect(() => {
+    setLanguage(UI_LANG_TO_NAME[uiLang] ?? "English");
+  }, [uiLang]);
   const [subject, setSubject] = useState<string>("Maths");
   const [classLevel, setClassLevel] = useState<string>("Class 5");
   const [difficulty, setDifficulty] = useState<string>("Easy");

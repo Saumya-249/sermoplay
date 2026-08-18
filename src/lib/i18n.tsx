@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { MODULE_DICTS, MODULE_EN } from "@/lib/i18n-modules";
+
 export type UiLang = "en" | "hi" | "ta" | "kn" | "bn" | "mr" | "te";
 
 export const LANGUAGES: { code: UiLang; label: string; short: string }[] = [
@@ -111,9 +113,11 @@ const EN = {
   nextCard: "Next Card",
 } as const;
 
-export type I18nKey = keyof typeof EN;
+const EN_ALL = { ...EN, ...MODULE_EN };
 
-const HI: Record<I18nKey, string> = {
+export type I18nKey = keyof typeof EN_ALL;
+
+const HI: Partial<Record<keyof typeof EN, string>> = {
   appName: "सर्मो प्ले",
   appTagline: "क्षेत्रीय भाषा",
   classroom: "कक्षा",
@@ -483,7 +487,15 @@ const TE: PartialDict = {
   syncNote: "ఆఫ్\u200cలైన్\u200cలో నమోదైన స్కోర్లు, డౌన్\u200cలోడ్\u200cలు కనెక్షన్ తిరిగి రాగానే స్వయంచాలకంగా అప్\u200cలోడ్ అవుతాయి.",
 };
 
-const DICTS: Record<UiLang, PartialDict> = { en: EN, hi: HI, ta: TA, kn: KN, bn: BN, mr: MR, te: TE };
+const DICTS: Record<UiLang, PartialDict> = {
+  en: EN_ALL,
+  hi: { ...HI, ...MODULE_DICTS.hi },
+  ta: { ...TA, ...MODULE_DICTS.ta },
+  kn: { ...KN, ...MODULE_DICTS.kn },
+  bn: { ...BN, ...MODULE_DICTS.bn },
+  mr: { ...MR, ...MODULE_DICTS.mr },
+  te: { ...TE, ...MODULE_DICTS.te },
+};
 
 
 type I18nState = {
@@ -516,7 +528,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       lang,
       setLang,
       toggleLang: () => setLang(lang === "en" ? "hi" : "en"),
-      t: (key: I18nKey) => DICTS[lang]?.[key] ?? EN[key],
+      t: (key: I18nKey) => DICTS[lang]?.[key] ?? EN_ALL[key],
     }),
     [lang, setLang],
   );
@@ -531,6 +543,6 @@ export function useI18n(): I18nState {
     lang: "en",
     setLang: () => {},
     toggleLang: () => {},
-    t: (key: I18nKey) => EN[key],
+    t: (key: I18nKey) => EN_ALL[key],
   };
 }

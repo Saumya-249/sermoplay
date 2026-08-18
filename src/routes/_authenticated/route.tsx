@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { BrandLogo } from "@/components/brand-logo";
 import { AppProvider, useApp } from "@/lib/app-context";
-import { I18nProvider, useI18n, type I18nKey } from "@/lib/i18n";
+import { useI18n, type I18nKey } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/lib/theme";
@@ -88,8 +88,7 @@ const NAV: { to: string; key: I18nKey; icon: typeof LayoutDashboard }[] = [
 function AppLayout() {
   const { user, role, guest, registeredClass } = Route.useRouteContext();
   return (
-    <I18nProvider>
-      <AppProvider
+    <AppProvider
         userId={user?.id ?? null}
         userEmail={user?.email ?? null}
         role={role}
@@ -99,8 +98,7 @@ function AppLayout() {
         <SidebarProvider>
           <Shell />
         </SidebarProvider>
-      </AppProvider>
-    </I18nProvider>
+    </AppProvider>
   );
 }
 

@@ -514,7 +514,7 @@ function MapDetective({ hi }: { hi: boolean }) {
   const q = MAP_QUESTIONS[idx]!;
 
   function pick(i: number) {
-    if (i === q.correct) {
+    if (i === q.answer) {
       playRewardSound();
       setScore((s) => s + 1);
       setFeedback("ok");

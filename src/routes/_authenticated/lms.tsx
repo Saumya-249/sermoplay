@@ -202,7 +202,7 @@ function ResourceCard({ resource }: { resource: LmsResource }) {
                 <span className="text-primary" aria-hidden>
                   •
                 </span>
-                <span>{point}</span>
+                <span>{L(point)}</span>
               </li>
             ))}
           </ul>

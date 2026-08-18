@@ -49,15 +49,6 @@ function StatTile({ emoji, label, value, sub }: { emoji: string; label: string; 
 function AdminPage() {
   const { online } = useApp();
   const { t } = useI18n();
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return STUDENTS;
-    return STUDENTS.filter(
-      (s) => s.name.toLowerCase().includes(q) || String(s.classNo).includes(q) || String(s.classNo) === q,
-    );
-  }, [query]);
 
   return (
     <div className="space-y-6">
@@ -81,4 +72,5 @@ function AdminPage() {
     </div>
   );
 }
+
 

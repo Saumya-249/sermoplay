@@ -133,6 +133,51 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_submissions: {
+        Row: {
+          accuracy: number
+          class_level: string
+          correct_count: number
+          created_at: string
+          duration_sec: number
+          id: string
+          quiz_id: string
+          quiz_title: string
+          subject: string
+          topic: string | null
+          total_count: number
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number
+          class_level?: string
+          correct_count?: number
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          quiz_id: string
+          quiz_title: string
+          subject?: string
+          topic?: string | null
+          total_count?: number
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          class_level?: string
+          correct_count?: number
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          quiz_id?: string
+          quiz_title?: string
+          subject?: string
+          topic?: string | null
+          total_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       quizzes: {
         Row: {
           class_level: string
@@ -175,6 +220,42 @@ export type Database = {
           subject?: string
           title?: string
           topic?: string | null
+        }
+        Relationships: []
+      }
+      student_game_sessions: {
+        Row: {
+          class_level: string
+          created_at: string
+          duration_sec: number
+          id: string
+          module_key: string
+          module_label: string
+          score: number
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          class_level?: string
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          module_key: string
+          module_label: string
+          score?: number
+          subject?: string
+          user_id: string
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          module_key?: string
+          module_label?: string
+          score?: number
+          subject?: string
+          user_id?: string
         }
         Relationships: []
       }

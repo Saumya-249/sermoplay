@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type AppRole } from "@/lib/roles";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandLogo } from "@/components/brand-logo";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -108,22 +108,6 @@ function AuthPage() {
     toast.success("Account created. Check your email to confirm, then sign in.");
   }
 
-  async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) toast.error("Google sign-in failed");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
-  }
-
   async function forgotPassword() {
     const target = window.prompt("Enter your account email to receive a reset link", email);
     if (!target) return;
@@ -148,7 +132,9 @@ function AuthPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-2 text-3xl">📚</div>
+            <div className="mx-auto mb-2 flex justify-center">
+              <BrandLogo />
+            </div>
             <CardTitle className="text-2xl">Sermo Play access</CardTitle>
             <CardDescription>Students, teachers and administrators</CardDescription>
           </CardHeader>
@@ -295,13 +281,7 @@ function AuthPage() {
                 </form>
               </TabsContent>
             </Tabs>
-            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-            </div>
-            <Button variant="outline" className="w-full" onClick={google}>
-              Continue with Google
-            </Button>
-            <p className="mt-3 text-center text-xs text-muted-foreground">
+            <p className="mt-4 text-center text-xs text-muted-foreground">
               An account is required to open the workspace — sign in or register above.
             </p>
           </CardContent>

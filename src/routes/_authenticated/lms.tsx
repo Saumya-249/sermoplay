@@ -206,7 +206,7 @@ function ResourceCard({ resource }: { resource: LmsResource }) {
                 <span className="text-primary" aria-hidden>
                   •
                 </span>
-                <span>{L(point)}</span>
+                <span>{point}</span>
               </li>
             ))}
           </ul>
@@ -257,7 +257,7 @@ function FlashcardDeck({ resource }: { resource: LmsResource }) {
             <span className="mb-2 text-[10px] font-bold uppercase tracking-widest text-primary">
               {t("questionLabel")}
             </span>
-            <p className="text-base font-semibold leading-snug">{L(card.front)}</p>
+            <p className="text-base font-semibold leading-snug">{card.front}</p>
             <span className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
               <RotateCw className="size-3" /> {t("tapToFlip")}
             </span>
@@ -266,7 +266,7 @@ function FlashcardDeck({ resource }: { resource: LmsResource }) {
             <span className="mb-2 text-[10px] font-bold uppercase tracking-widest text-accent-foreground/70">
               {t("answerLabel")}
             </span>
-            <p className="text-base font-medium leading-snug">{L(card.back)}</p>
+            <p className="text-base font-medium leading-snug">{card.back}</p>
             <span className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
               <RotateCw className="size-3" /> {t("tapToFlipBack")}
             </span>

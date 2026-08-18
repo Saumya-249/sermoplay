@@ -8,15 +8,13 @@ import { Label } from "@/components/ui/label";
 import { useApp } from "@/lib/app-context";
 import { useI18n } from "@/lib/i18n";
 import { loadPendingQueue } from "@/lib/pending-sync";
+import { TeacherAnalytics } from "@/components/teacher-analytics";
 import { useEffect, useState } from "react";
 import {
   STUDENT_ROWS,
-  TEACHER_ROWS,
   WEAK_SUBJECT_DISTRIBUTION,
   GLOBAL_AVG_SCORE,
   AVG_TIMED_GAME_SEC,
-  TOTAL_LMS_MODULES,
-  FALLBACK_QUIZ_COUNT,
 } from "@/lib/admin-analytics";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -104,8 +102,8 @@ function AdminPage() {
 
   const teachers = (profiles.data ?? []).filter((p) => p.role === "teacher");
   const liveQuizzes = quizCount.data ?? 0;
-  const totalQuizzes = (online ? liveQuizzes : 0) + FALLBACK_QUIZ_COUNT;
-  const activeEducators = Math.max(teachers.length, TEACHER_ROWS.length);
+  const totalQuizzes = liveQuizzes;
+  const activeEducators = teachers.length;
 
   return (
     <div className="space-y-6">
@@ -129,7 +127,7 @@ function AdminPage() {
           emoji="📊"
           label={hi ? "कुल एआई क्विज़ बनाए गए" : "Total AI Quizzes Generated"}
           value={String(totalQuizzes)}
-          sub={online ? `${liveQuizzes} ${hi ? "लाइव" : "live"} + ${FALLBACK_QUIZ_COUNT} ${hi ? "संग्रह" : "archive"}` : hi ? "कैश्ड कुल" : "cached total"}
+          sub={online ? (hi ? "लाइव डेटाबेस गणना" : "live database count") : hi ? "कैश्ड कुल" : "cached total"}
         />
         <StatCard
           emoji="📈"
@@ -141,7 +139,7 @@ function AdminPage() {
           emoji="👩‍🏫"
           label={hi ? "कुल सक्रिय शिक्षक" : "Total Active Educators"}
           value={String(activeEducators)}
-          sub={`${TEACHER_ROWS.reduce((a, t) => a + t.activeClasses, 0)} ${hi ? "सक्रिय कक्षाएँ" : "active classes"}`}
+          sub={hi ? "पंजीकृत शिक्षक खाते" : "registered teacher accounts"}
         />
         <StatCard
           emoji="⏱️"

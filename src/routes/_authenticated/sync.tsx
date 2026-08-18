@@ -207,7 +207,7 @@ function SyncPanel() {
           <div className="flex items-center justify-between rounded-lg border p-3">
             <span className="flex items-center gap-2 text-sm font-medium">
               {online ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}
-              {online ? t("lmsOnline") : t("syOfflineMode")}
+              {online ? t("online") : t("syOfflineMode")}
             </span>
             <Switch checked={online} onCheckedChange={setOnline} />
           </div>

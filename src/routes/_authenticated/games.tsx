@@ -1,15 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import {
-  BAZAAR_ITEMS,
-  CROPS,
-  DENOMINATIONS,
-  ECO_ACTIONS,
-  GAME_CLASSES,
-  GAME_SUBJECTS,
-  pickLang,
-} from "@/lib/contextual-games";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { CelebrationSplash } from "@/components/games/celebration";
+import { ENGINES } from "@/components/arcade/engines";
+import { generateArcadeRound } from "@/lib/arcade-ai.functions";
+import {
+  ARCADE_GAMES,
+  ARCADE_SUBJECTS,
+  getArcadeGame,
+  type ArcadeData,
+  type ArcadeGame,
+} from "@/lib/arcade-catalog";
 import { useApp } from "@/lib/app-context";
 import { LANGUAGES, useI18n, type UiLang } from "@/lib/i18n";
 import { localizeGameText } from "@/lib/game-i18n";
@@ -24,53 +26,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Gamepad2, WifiOff } from "lucide-react";
+import { Gamepad2, Loader2, LogOut, Sparkles, Timer, WifiOff } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/games")({
   head: () => ({
     meta: [
-      { title: "Interactive Contextual Games Hub | Sermo Play" },
+      { title: "Educational Arcade Arena | Sermo Play" },
       {
         name: "description",
         content:
-          "Play offline contextual classroom games — the Regional Bazaar currency counter and the Farmer's Ecosystem Balance simulator, in English and Hindi.",
+          "Fifteen applied-learning arcade games — bazaar currency, fraction slicing, food webs, freedom timelines and more — with live AI content in seven Indian languages.",
       },
-      { property: "og:title", content: "Interactive Contextual Games Hub | Sermo Play" },
+      { property: "og:title", content: "Educational Arcade Arena | Sermo Play" },
       {
         property: "og:description",
         content:
-          "Play offline contextual classroom games — the Regional Bazaar currency counter and the Farmer's Ecosystem Balance simulator, in English and Hindi.",
+          "Fifteen applied-learning arcade games with live AI-generated content in seven Indian languages.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: GamesHubPage,
+  component: ArcadeArenaPage,
 });
 
-function GamesHubPage() {
-  const { registeredClass, classLocked } = useApp();
+const LANG_NAME: Record<UiLang, string> = {
+  en: "English",
+  hi: "Hindi",
+  ta: "Tamil",
+  kn: "Kannada",
+  bn: "Bengali",
+  mr: "Marathi",
+  te: "Telugu",
+};
+
+function ArcadeArenaPage() {
   const { t, lang, setLang } = useI18n();
   const [subject, setSubject] = useState<string>("Math");
-  const [classLevel, setClassLevel] = useState<string>(
-    classLocked && registeredClass ? registeredClass : "Class 3",
-  );
-  useEffect(() => {
-    if (classLocked && registeredClass) setClassLevel(registeredClass);
-  }, [classLocked, registeredClass]);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const showBazaar = subject === "Math";
-  const crop = CROPS[classLevel] ?? CROPS["Class 3"]!;
+  const games = useMemo(() => ARCADE_GAMES.filter((g) => g.subject === subject), [subject]);
+  const active = activeKey ? getArcadeGame(activeKey) : undefined;
+
+  if (active) {
+    return <ArcadeStage key={`${active.key}-${lang}`} game={active} onExit={() => setActiveKey(null)} />;
+  }
 
   return (
     <div key={lang} className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{t("gamesHubTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("gamesHubSub")}</p>
+        <h1 className="text-2xl font-bold">🕹️ {t("arenaTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("arenaSub")}</p>
       </div>
 
       <Card>
-        <CardContent className="grid gap-3 pt-6 sm:grid-cols-3">
+        <CardContent className="grid gap-3 pt-6 sm:grid-cols-2">
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">{t("language")}</p>
             <Select value={lang} onValueChange={(v) => setLang(v as UiLang)}>
@@ -86,8 +96,21 @@ function GamesHubPage() {
               </SelectContent>
             </Select>
           </div>
-          <Filter label={t("subjectLabel")} value={subject} onChange={setSubject} options={[...GAME_SUBJECTS]} lang={lang} />
-          <Filter label={t("classLabel")} value={classLevel} onChange={setClassLevel} options={[...GAME_CLASSES]} lang={lang} />
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">{t("subjectLabel")}</p>
+            <Select value={subject} onValueChange={setSubject}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ARCADE_SUBJECTS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {localizeGameText(s, lang)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
@@ -96,324 +119,241 @@ function GamesHubPage() {
           <WifiOff className="size-3" /> {t("fullyOffline")}
         </Badge>
         <Badge variant="outline" className="gap-1">
-          <Gamepad2 className="size-3" /> {localizeGameText(subject, lang)} · {localizeGameText(classLevel, lang)}
+          <Gamepad2 className="size-3" /> {games.length} {t("arenaGamesCount")}
         </Badge>
       </div>
 
-      {showBazaar ? (
-        <BazaarGame lang={lang} classLevel={classLevel} />
-      ) : (
-        <EcosystemGame lang={lang} crop={crop} />
-      )}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {games.map((g) => (
+          <GameToken key={g.key} game={g} onLaunch={() => setActiveKey(g.key)} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function Filter({
-  label,
-  value,
-  onChange,
-  options,
-  lang,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-  lang: UiLang;
-}) {
+function GameToken({ game, onLaunch }: { game: ArcadeGame; onLaunch: () => void }) {
+  const { t, lang } = useI18n();
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o} value={o}>
-              {localizeGameText(o, lang)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Card className="group flex h-full flex-col overflow-hidden border-2 transition hover:-translate-y-1 hover:border-primary hover:shadow-lg">
+      <CardHeader className="bg-primary/5">
+        <div className="flex items-start gap-3">
+          <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-card text-3xl shadow-sm" aria-hidden>
+            {game.emoji}
+          </span>
+          <div className="min-w-0">
+            <CardTitle className="text-base leading-snug">{localizeGameText(game.title, lang)}</CardTitle>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Badge variant="secondary" className="text-[10px]">
+                {localizeGameText(game.subject, lang)}
+              </Badge>
+              <Badge variant="outline" className="gap-1 text-[10px]">
+                <Timer className="size-3" /> {game.seconds} {t("secondsShort")}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-1 flex-col gap-4 pt-5">
+        <CardDescription className="flex-1">{localizeGameText(game.description, lang)}</CardDescription>
+        <Button className="w-full" onClick={onLaunch}>
+          🎮 {t("launchGame")}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
-/* ---------------- Game 1: Regional Bazaar Currency Counter ---------------- */
+/* --------------------------- Full-screen arcade --------------------------- */
 
-function BazaarGame({ lang, classLevel }: { lang: UiLang; classLevel: string }) {
-  const { t } = useI18n();
-  const items = BAZAAR_ITEMS[classLevel] ?? BAZAAR_ITEMS["Class 3"]!;
-  const [itemIndex, setItemIndex] = useState(0);
-  const [tokens, setTokens] = useState<{ id: number; value: number; kind: "coin" | "note" }[]>([]);
-  const [won, setWon] = useState(false);
-  const { userId } = useApp();
+function ArcadeStage({ game, onExit }: { game: ArcadeGame; onExit: () => void }) {
+  const { t, lang } = useI18n();
+  const { userId, online } = useApp();
+  const synthesize = useServerFn(generateArcadeRound);
+
+  const [data, setData] = useState<ArcadeData>(game.fallback);
+  const [live, setLive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [variant, setVariant] = useState(0);
+  const [score, setScore] = useState(0);
+  const [hits, setHits] = useState({ correct: 0, wrong: 0 });
+  const [seconds, setSeconds] = useState(game.seconds);
+  const [over, setOver] = useState(false);
+  const [roundKey, setRoundKey] = useState(0);
+
+  const load = useCallback(
+    async (nextVariant: number) => {
+      if (!online) {
+        setLive(false);
+        setData(game.fallback);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await synthesize({
+          data: {
+            gameKey: game.key,
+            gameTitle: game.title,
+            subject: game.subject,
+            engine: game.engine,
+            language: LANG_NAME[lang],
+            variant: nextVariant,
+          },
+        });
+        const payload = res.data as ArcadeData;
+        const usable =
+          (payload.rounds?.length ?? 0) > 0 ||
+          (payload.tokens?.length ?? 0) > 0 ||
+          (payload.fractions?.length ?? 0) > 0 ||
+          (payload.items?.length ?? 0) > 0 ||
+          (payload.sequence?.length ?? 0) > 0 ||
+          Boolean(payload.crop);
+        setData(usable ? payload : game.fallback);
+        setLive(usable);
+      } catch (e) {
+        setData(game.fallback);
+        setLive(false);
+        toast.error(e instanceof Error ? e.message : "Live synthesis failed — offline pack loaded.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [game, lang, online, synthesize],
+  );
+
   useEffect(() => {
-    if (!won) return;
+    void load(0);
+  }, [load]);
+
+  useEffect(() => {
+    if (over || loading) return;
+    const id = window.setInterval(() => {
+      setSeconds((s) => {
+        if (s <= 1) {
+          window.clearInterval(id);
+          setOver(true);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [over, loading]);
+
+  useEffect(() => {
+    if (!over) return;
     void logGameSession({
       userId,
-      moduleKey: "bazaar-currency-counter",
-      moduleLabel: "Regional Bazaar Currency Counter",
-      subject: "Math",
-      classLevel,
-      score: itemIndex + 1,
+      moduleKey: game.key,
+      moduleLabel: game.title,
+      subject: game.subject,
+      classLevel: "Class 5",
+      score,
+      durationSec: game.seconds - seconds,
     });
-  }, [won, userId, classLevel, itemIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [over]);
 
-  const item = items[Math.min(itemIndex, items.length - 1)]!;
-  const target = item.unitPrice * item.quantity;
-  const currentTotal = tokens.reduce((s, t) => s + t.value, 0);
-
-  useEffect(() => {
-    setTokens([]);
-    setWon(false);
-    setItemIndex(0);
-  }, [classLevel]);
-
-  useEffect(() => {
-    if (currentTotal === target && tokens.length > 0) setWon(true);
-  }, [currentTotal, target, tokens.length]);
-
-  const addToken = (value: number, kind: "coin" | "note") =>
-    setTokens((t) => [...t, { id: Date.now() + Math.random(), value, kind }]);
-
-  const nextItem = () => {
-    setTokens([]);
-    setWon(false);
-    setItemIndex((i) => (i + 1) % items.length);
+  const restart = async (nextVariant: number) => {
+    setVariant(nextVariant);
+    setScore(0);
+    setHits({ correct: 0, wrong: 0 });
+    setSeconds(game.seconds);
+    setOver(false);
+    setRoundKey((k) => k + 1);
+    await load(nextVariant);
   };
 
-  const over = currentTotal > target;
+  const Engine = ENGINES[game.engine];
+  const pct = Math.round((seconds / game.seconds) * 100);
 
   return (
-    <>
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-primary/5">
-          <CardTitle className="flex items-center gap-2">
-            🏪 {t("bazaarTitle")}
-          </CardTitle>
-          <CardDescription>{t("bazaarSub")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5 pt-6">
-          <div className="flex items-center gap-4 rounded-xl border-2 border-primary/30 bg-card p-4">
-            <span className="text-5xl" aria-hidden>
-              {item.emoji}
-            </span>
-            <div>
-              <p className="text-lg font-bold">{pickLang(item.name, lang)}</p>
-              <p className="text-sm text-muted-foreground">
-                {t("priceLabel")}: ₹{item.unitPrice} x {item.quantity}
-              </p>
-            </div>
-            <Badge className="ml-auto text-base">
-              {t("targetAmount")}: ₹{target}
-            </Badge>
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm font-semibold">₹ {t("amountYouGave")}</p>
-            <div className="flex min-h-28 flex-wrap content-start gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-muted/40 p-3">
-              {tokens.length === 0 && (
-                <p className="m-auto text-xs text-muted-foreground">{t("tapCoinsHint")}</p>
-              )}
-              {tokens.map((t) => (
-                <span
-                  key={t.id}
-                  className={
-                    t.kind === "coin"
-                      ? "token-pop flex size-12 items-center justify-center rounded-full border-2 border-amber-500/60 bg-amber-400/30 text-sm font-bold"
-                      : "token-pop flex h-12 w-20 items-center justify-center rounded-md border-2 border-emerald-600/60 bg-emerald-400/25 text-sm font-bold"
-                  }
-                >
-                  ₹{t.value}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <p className={`text-lg font-bold ${over ? "text-destructive" : ""}`}>
-              {t("yourTotal")}: ₹{currentTotal} / ₹{target}
-            </p>
-            <Button variant="outline" size="sm" onClick={() => { setTokens([]); setWon(false); }}>
-              🔄 {t("resetLabel")}
-            </Button>
-            {over && (
-              <span className="text-xs text-destructive">{t("tooMuch")}</span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-            {DENOMINATIONS.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => addToken(d.value, d.kind)}
-                className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs font-semibold transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 ${
-                  d.kind === "coin"
-                    ? "border-amber-500/50 bg-amber-400/15"
-                    : "border-emerald-600/50 bg-emerald-400/15"
-                }`}
-              >
-                <span
-                  className={
-                    d.kind === "coin"
-                      ? "flex size-10 items-center justify-center rounded-full border-2 border-amber-500/70 bg-amber-300/40 text-sm font-bold"
-                      : "flex h-10 w-16 items-center justify-center rounded-md border-2 border-emerald-600/70 bg-emerald-300/35 text-sm font-bold"
-                  }
-                  aria-hidden
-                >
-                  ₹{d.value}
-                </span>
-                {pickLang(d.label, lang)}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <CelebrationSplash
-        open={won}
-        title={t("excellentWork")}
-        subtitle={t("countedExact")}
-        actionLabel={t("nextItem")}
-        onAction={nextItem}
-      />
-    </>
-  );
-}
-
-/* ---------------- Game 2: Farmer's Ecosystem Balance ---------------- */
-
-type Metrics = { water: number; nutrients: number; pest: number };
-
-function EcosystemGame({ lang, crop }: { lang: UiLang; crop: (typeof CROPS)[string] }) {
-  const { t } = useI18n();
-  const [metrics, setMetrics] = useState<Metrics>({ water: 0, nutrients: 0, pest: 0 });
-  const [moves, setMoves] = useState(0);
-  const { userId } = useApp();
-
-  const balanced = useMemo(
-    () => metrics.water === 100 && metrics.nutrients === 100 && metrics.pest === 100,
-    [metrics],
-  );
-
-  useEffect(() => {
-    if (!balanced) return;
-    void logGameSession({
-      userId,
-      moduleKey: "farmer-ecosystem-balance",
-      moduleLabel: "Farmer's Ecosystem Balance",
-      subject: "Science",
-      classLevel: "Class 3",
-      score: Math.max(1, 30 - moves),
-    });
-  }, [balanced, userId, moves]);
-
-  useEffect(() => {
-    setMetrics({ water: 0, nutrients: 0, pest: 0 });
-    setMoves(0);
-  }, [crop.id]);
-
-  const clamp = (n: number) => Math.max(0, Math.min(150, n));
-
-  const apply = (effect: Metrics) => {
-    setMetrics((m) => ({
-      water: clamp(m.water + effect.water),
-      nutrients: clamp(m.nutrients + effect.nutrients),
-      pest: clamp(m.pest + effect.pest),
-    }));
-    setMoves((n) => n + 1);
-  };
-
-  const reset = () => {
-    setMetrics({ water: 0, nutrients: 0, pest: 0 });
-    setMoves(0);
-  };
-
-  return (
-    <>
-      <Card>
-        <CardHeader className="bg-primary/5">
-          <CardTitle className="flex items-center gap-2">
-            🚜 {t("ecoTitle")}
-          </CardTitle>
-          <CardDescription>{t("ecoGoal")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5 pt-6">
-          <div className="flex items-center gap-4 rounded-xl border-2 border-primary/30 p-4">
-            <span className="text-5xl" aria-hidden>
-              {crop.emoji}
-            </span>
-            <div>
-              <p className="text-lg font-bold">{pickLang(crop.name, lang)}</p>
-              <p className="text-sm text-muted-foreground">{pickLang(crop.hint, lang)}</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <MetricBar label={t("waterReq")} value={metrics.water} tone="bg-sky-500" />
-            <MetricBar label={t("soilNutrients")} value={metrics.nutrients} tone="bg-amber-600" />
-            <MetricBar label={t("pestProtection")} value={metrics.pest} tone="bg-emerald-600" />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {ECO_ACTIONS.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => apply(a.effect)}
-                className={`rounded-xl border-2 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${a.tone}`}
-              >
-                <span className="text-3xl" aria-hidden>
-                  {a.emoji}
-                </span>
-                <p className="mt-2 text-sm font-semibold">{pickLang(a.label, lang)}</p>
-                <p className="text-xs text-muted-foreground">{pickLang(a.note, lang)}</p>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge variant="secondary">
-              {t("movesLabel")}: {moves}
-            </Badge>
-            <Button variant="outline" size="sm" onClick={reset}>
-              🔄 {t("resetLabel")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <CelebrationSplash
-        open={balanced}
-        title={t("cropBalanced")}
-        subtitle={`${t("balancedInPrefix")} ${moves} ${t("movesSuffix")}.`}
-        actionLabel={t("playAgain")}
-        onAction={reset}
-      />
-    </>
-  );
-}
-
-function MetricBar({ label, value, tone }: { label: string; value: number; tone: string }) {
-  const over = value > 100;
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-xs font-medium">
-        <span>{label}</span>
-        <span className={over ? "text-destructive" : value === 100 ? "text-emerald-600" : ""}>
-          {value}% / 100%
+    <div key={lang} className="space-y-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-2xl" aria-hidden>
+          {game.emoji}
         </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-bold">{localizeGameText(game.title, lang)}</h1>
+          <p className="truncate text-xs text-muted-foreground">
+            {localizeGameText(game.subject, lang)} ·{" "}
+            {live ? (
+              <span className="text-primary">
+                <Sparkles className="mr-1 inline size-3" />
+                {t("livePack")}
+              </span>
+            ) : (
+              t("offlinePack")
+            )}
+          </p>
+        </div>
+        <Button variant="destructive" onClick={onExit} className="gap-2">
+          <LogOut className="size-4" /> 🚪 {t("quitArena")}
+        </Button>
       </div>
-      <div className="h-4 w-full overflow-hidden rounded-full border bg-muted">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${over ? "bg-destructive" : tone}`}
-          style={{ width: `${Math.min(value, 100)}%` }}
-        />
-      </div>
+
+      <Card className="overflow-hidden border-2">
+        <CardHeader className="gap-3 bg-primary/5 pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="text-sm">
+              {t("scoreLabel")}: {score}
+            </Badge>
+            <Badge variant="secondary" className="gap-1 text-sm">
+              <Timer className="size-3" /> {seconds}
+              {t("secondsShort")}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              ✅ {hits.correct} · ❌ {hits.wrong}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto gap-1"
+              disabled={loading}
+              onClick={() => void restart(variant + 1)}
+            >
+              {loading ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+              {t("newAiRound")}
+            </Button>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ${pct < 25 ? "bg-destructive" : "bg-primary"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {loading ? (
+            <div className="flex min-h-56 flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="size-8 animate-spin text-primary" />
+              <p className="text-sm">{t("synthesizing")}</p>
+            </div>
+          ) : (
+            <Engine
+              key={`${game.key}-${roundKey}`}
+              game={game}
+              data={data}
+              onScore={(points, correct) => {
+                setScore((s) => s + points);
+                setHits((h) => ({
+                  correct: h.correct + (correct ? 1 : 0),
+                  wrong: h.wrong + (correct ? 0 : 1),
+                }));
+              }}
+              onFinish={() => setOver(true)}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <CelebrationSplash
+        open={over}
+        title={seconds === 0 ? `⏱️ ${t("timeUpLabel")}` : `🎉 ${t("arenaCleared")}`}
+        subtitle={`${t("finalScore")}: ${score}`}
+        actionLabel={t("playAgain")}
+        onAction={() => void restart(variant + 1)}
+      />
     </div>
   );
 }

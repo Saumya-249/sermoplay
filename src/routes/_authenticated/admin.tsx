@@ -322,11 +322,11 @@ function AdminPage() {
           <ol className="space-y-3">
             {OPS_LOG.map((entry) => {
               const vars: Record<string, string | number> = { name: entry.name };
-              if ("cls" in entry) vars.cls = cls(entry.cls);
-              if ("subject" in entry) vars.subject = t(entry.subject as I18nKey);
-              if ("topic" in entry) vars.topic = t(entry.topic as I18nKey);
-              if ("score" in entry) vars.score = entry.score;
-              if ("game" in entry) vars.game = t(entry.game as I18nKey);
+              if ("cls" in entry) vars["cls"] = cls(entry.cls);
+              if ("subject" in entry) vars["subject"] = t(entry.subject as I18nKey);
+              if ("topic" in entry) vars["topic"] = t(entry.topic as I18nKey);
+              if ("score" in entry) vars["score"] = entry.score;
+              if ("game" in entry) vars["game"] = t(entry.game as I18nKey);
               return (
                 <li key={entry.id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-lg border p-3">
                   <span aria-hidden className="mt-0.5 text-base">

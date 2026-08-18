@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cachedQuizzes, cacheLibrarySection } from "@/lib/offline-library";
 import { useApp } from "@/lib/app-context";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/printables")({
   beforeLoad: ({ context }) => {
@@ -82,7 +83,7 @@ function normalize(row: QuizRow): PrintableQuiz {
 const esc = (v: unknown) =>
   String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-async function handleIsolatedPrint(quiz: PrintableQuiz) {
+async function handleIsolatedPrint(quiz: PrintableQuiz, labels: { name: string; roll: string; date: string; scan: string }) {
   const printWindow = window.open("", "_blank", "width=800,height=600");
   if (!printWindow) return;
 
@@ -110,14 +111,14 @@ async function handleIsolatedPrint(quiz: PrintableQuiz) {
 
         <div style="float: right; text-align: center; margin-top: -50px;">
           <img src="https://qrserver.com${encodeURIComponent(window.location.origin + '/play/' + quiz.id)}" alt="QR Code" style="width: 100px; height: 100px;" />
-          <div style="font-size: 10px; margin-top: 4px; color: #555; max-width: 100px;">Scan to play digital version offline</div>
+          <div style="font-size: 10px; margin-top: 4px; color: #555; max-width: 100px;">${esc(labels.scan)}</div>
         </div>
         <div style="clear: both;"></div>
 
         <div class="student-meta">
-          <div class="meta-field">Student Name: _______________________</div>
-          <div class="meta-field">Roll No: ___________</div>
-          <div class="meta-field">Date: ___________</div>
+          <div class="meta-field">${esc(labels.name)}: _______________________</div>
+          <div class="meta-field">${esc(labels.roll)}: ___________</div>
+          <div class="meta-field">${esc(labels.date)}: ___________</div>
         </div>
 
         <div class="quiz-meta">
@@ -160,6 +161,7 @@ async function handleIsolatedPrint(quiz: PrintableQuiz) {
 
 function Printables() {
   const { online } = useApp();
+  const { t, lang } = useI18n();
 
   const quizzes = useQuery({
     queryKey: ["printable-quizzes", online],
@@ -175,24 +177,22 @@ function Printables() {
   const rows = useMemo(() => (quizzes.data ?? []).map(normalize), [quizzes.data]);
 
   return (
-    <div className="space-y-6">
+    <div key={lang} className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold">Printable hub</h1>
-        <p className="text-sm text-muted-foreground">
-          Print any quiz as a clean black-and-white student worksheet in a fresh, isolated window.
-        </p>
+        <h1 className="text-2xl font-bold">{t("phTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("phSub")}</p>
         {!online && (
           <Badge variant="secondary" className="mt-2">
-            📦 Serving cached quizzes from local offline memory
+            📦 {t("phCached")}
           </Badge>
         )}
       </header>
 
       {quizzes.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading quizzes…</p>
+        <p className="text-sm text-muted-foreground">{t("phLoading")}</p>
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No quizzes yet — create one in the Quiz Creator to generate worksheets.
+          {t("phEmpty")}
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -201,7 +201,7 @@ function Printables() {
               <CardHeader>
                 <CardTitle className="text-base">{quiz.title}</CardTitle>
                 <CardDescription>
-                  {quiz.questions.length} questions · {quiz.topic}
+                  {t("phQuestions", { count: quiz.questions.length })} · {quiz.topic}
                 </CardDescription>
               </CardHeader>
               <CardContent className="mt-auto space-y-4">
@@ -210,8 +210,16 @@ function Printables() {
                   <Badge variant="secondary">{quiz.subject}</Badge>
                   <Badge variant="outline">{quiz.classLevel}</Badge>
                 </div>
-                <Button className="w-full" onClick={() => handleIsolatedPrint(quiz)}>
-                  📄 Print/Save Worksheet
+                <Button className="w-full" onClick={() =>
+                    handleIsolatedPrint(quiz, {
+                      name: t("wsStudentName"),
+                      roll: t("wsRollNo"),
+                      date: t("wsDate"),
+                      scan: t("wsScan"),
+                    })
+                  }
+                >
+                  📄 {t("phPrint")}
                 </Button>
               </CardContent>
             </Card>

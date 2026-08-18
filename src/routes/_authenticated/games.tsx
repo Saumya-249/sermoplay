@@ -15,6 +15,7 @@ import {
 import { useApp } from "@/lib/app-context";
 import { LANGUAGES, useI18n, type UiLang } from "@/lib/i18n";
 import { localizeGameText } from "@/lib/game-i18n";
+import { ARCADE_KEY_MAP } from "@/lib/i18n-views";
 import { logGameSession } from "@/lib/telemetry";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,8 +133,19 @@ function ArcadeArenaPage() {
   );
 }
 
+function useGameStrings() {
+  const { t, lang } = useI18n();
+  return {
+    title: (g: ArcadeGame) =>
+      ARCADE_KEY_MAP[g.key] ? t(ARCADE_KEY_MAP[g.key]!.t) : localizeGameText(g.title, lang),
+    description: (g: ArcadeGame) =>
+      ARCADE_KEY_MAP[g.key] ? t(ARCADE_KEY_MAP[g.key]!.d) : localizeGameText(g.description, lang),
+  };
+}
+
 function GameToken({ game, onLaunch }: { game: ArcadeGame; onLaunch: () => void }) {
   const { t, lang } = useI18n();
+  const gs = useGameStrings();
   return (
     <Card className="group flex h-full flex-col overflow-hidden border-2 transition hover:-translate-y-1 hover:border-primary hover:shadow-lg">
       <CardHeader className="bg-primary/5">
@@ -142,7 +154,7 @@ function GameToken({ game, onLaunch }: { game: ArcadeGame; onLaunch: () => void 
             {game.emoji}
           </span>
           <div className="min-w-0">
-            <CardTitle className="text-base leading-snug">{localizeGameText(game.title, lang)}</CardTitle>
+            <CardTitle className="text-base leading-snug">{gs.title(game)}</CardTitle>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Badge variant="secondary" className="text-[10px]">
                 {localizeGameText(game.subject, lang)}
@@ -155,7 +167,7 @@ function GameToken({ game, onLaunch }: { game: ArcadeGame; onLaunch: () => void 
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4 pt-5">
-        <CardDescription className="flex-1">{localizeGameText(game.description, lang)}</CardDescription>
+        <CardDescription className="flex-1">{gs.description(game)}</CardDescription>
         <Button className="w-full" onClick={onLaunch}>
           🎮 {t("launchGame")}
         </Button>
@@ -169,6 +181,7 @@ function GameToken({ game, onLaunch }: { game: ArcadeGame; onLaunch: () => void 
 function ArcadeStage({ game, onExit }: { game: ArcadeGame; onExit: () => void }) {
   const { t, lang } = useI18n();
   const { userId, online } = useApp();
+  const gs = useGameStrings();
   const synthesize = useServerFn(generateArcadeRound);
 
   const [data, setData] = useState<ArcadeData>(game.fallback);
@@ -274,7 +287,7 @@ function ArcadeStage({ game, onExit }: { game: ArcadeGame; onExit: () => void })
           {game.emoji}
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold">{localizeGameText(game.title, lang)}</h1>
+          <h1 className="truncate text-xl font-bold">{gs.title(game)}</h1>
           <p className="truncate text-xs text-muted-foreground">
             {localizeGameText(game.subject, lang)} ·{" "}
             {live ? (

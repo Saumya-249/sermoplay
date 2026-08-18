@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { CloudUpload, WifiOff, Wifi, Trash2, PlusCircle, Loader2 } from "lucide-react";
 import { removePendingQuiz } from "@/lib/pending-sync";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/sync")({
   beforeLoad: ({ context }) => {
@@ -40,6 +41,7 @@ const SAMPLE = [
 
 function SyncPanel() {
   const { userId, online, setOnline, pendingQueue, syncing: localSyncing, syncNow } = useApp();
+  const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [progress, setProgress] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -72,17 +74,17 @@ function SyncPanel() {
       toast.error(error.message);
       return;
     }
-    toast.success("Record stored locally and queued");
+    toast.success(t("syToastQueued"));
     qc.invalidateQueries({ queryKey: ["sync_queue"] });
   }
 
   async function runSync() {
     if (!online) {
-      toast.error("No connectivity — turn on the network to sync.");
+      toast.error(t("syToastNoNet"));
       return;
     }
     if (pending.length === 0) {
-      toast.info("Nothing to sync — everything is up to date.");
+      toast.info(t("syToastNothing"));
       return;
     }
     setSyncing(true);
@@ -98,7 +100,7 @@ function SyncPanel() {
       qc.invalidateQueries({ queryKey: ["sync_queue"] });
     }
     setSyncing(false);
-    toast.success(`${pending.length} record(s) synced to the cloud`);
+    toast.success(t("syToastSynced", { count: pending.length }));
   }
 
   async function clearSynced() {
@@ -111,15 +113,15 @@ function SyncPanel() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div key={lang} className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle>Offline quiz queue (local storage)</CardTitle>
+            <CardTitle>{t("syQueueTitle")}</CardTitle>
             <CardDescription>
               {pendingQueue.length === 0
-                ? "No quizzes trapped locally."
-                : `${pendingQueue.length} quiz(zes) waiting to reach the cloud.`}
+                ? t("syQueueEmpty")
+                : t("syQueueCount", { count: pendingQueue.length })}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -128,15 +130,15 @@ function SyncPanel() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{item.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    Saved offline · {new Date(item.savedAt).toLocaleString()}
+                    {t("sySavedOffline")} · {new Date(item.savedAt).toLocaleString()}
                   </p>
                 </div>
-                <Badge variant="secondary">pending</Badge>
+                <Badge variant="secondary">{t("syPendingTag")}</Badge>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-destructive"
-                  aria-label={`Discard ${item.title}`}
+                  aria-label={`${t("syDiscard")} ${item.title}`}
                   onClick={() => removePendingQuiz(item.id)}
                 >
                   <Trash2 className="size-4" />
@@ -146,27 +148,27 @@ function SyncPanel() {
             {localSyncing && (
               <div className="flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm font-medium">
                 <Loader2 className="size-4 animate-spin text-primary" />
-                Detecting network connection... Synchronizing local data to cloud repository...
+                {t("syDetecting")}
               </div>
             )}
             {pendingQueue.length > 0 && (
               <Button onClick={() => void syncNow()} disabled={!online || localSyncing}>
-                <CloudUpload className="size-4" /> Sync offline quizzes now
+                <CloudUpload className="size-4" /> {t("sySyncOfflineQuizzes")}
               </Button>
             )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Local data queue</CardTitle>
+            <CardTitle>{t("syLocalQueue")}</CardTitle>
             <CardDescription>
-              {pending.length} pending · {items.length - pending.length} synced
+              {t("syQueueStatus", { pending: pending.length, synced: items.length - pending.length })}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {items.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                The queue is empty. Record something offline to see it appear here.
+                {t("syQueueEmptyDb")}
               </p>
             )}
             {items.map((item) => (
@@ -183,13 +185,13 @@ function SyncPanel() {
             {syncing && <Progress value={progress} />}
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={addSample}>
-                <PlusCircle className="size-4" /> Record classroom data
+                <PlusCircle className="size-4" /> {t("syRecordData")}
               </Button>
               <Button onClick={runSync} disabled={syncing}>
-                <CloudUpload className="size-4" /> Sync now
+                <CloudUpload className="size-4" /> {t("sySyncNow")}
               </Button>
               <Button variant="ghost" onClick={clearSynced}>
-                <Trash2 className="size-4" /> Clear synced
+                <Trash2 className="size-4" /> {t("syClearSynced")}
               </Button>
             </div>
           </CardContent>
@@ -198,20 +200,19 @@ function SyncPanel() {
 
       <Card className="h-fit">
         <CardHeader>
-          <CardTitle>Connectivity</CardTitle>
-          <CardDescription>Simulate classroom network conditions.</CardDescription>
+          <CardTitle>{t("syConnectivity")}</CardTitle>
+          <CardDescription>{t("syConnectivitySub")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-3">
             <span className="flex items-center gap-2 text-sm font-medium">
               {online ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}
-              {online ? "Online" : "Offline mode"}
+              {online ? t("online") : t("syOfflineMode")}
             </span>
             <Switch checked={online} onCheckedChange={setOnline} />
           </div>
           <p className="text-xs text-muted-foreground">
-            In offline mode, downloads are blocked and new quizzes are stored in the local queue. When connectivity
-            returns, press “Sync now” to upload every pending record.
+            {t("syConnectivityNote")}
           </p>
         </CardContent>
       </Card>

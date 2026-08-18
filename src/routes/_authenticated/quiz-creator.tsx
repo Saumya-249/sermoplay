@@ -72,7 +72,7 @@ function QuizCreator() {
   const { userId, online, queueQuiz } = useApp();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
-  const { lang: uiLang } = useI18n();
+  const { t, lang: uiLang } = useI18n();
   const [language, setLanguage] = useState<string>(UI_LANG_TO_NAME[uiLang] ?? "English");
   // Quiz Creator language always mirrors the global workspace language.
   useEffect(() => {
@@ -140,8 +140,8 @@ function QuizCreator() {
     onSuccess: (result) => {
       toast.success(
         result === "queued"
-          ? "Quiz saved locally to offline storage queue."
-          : "Quiz published to your library",
+          ? t("qcToastQueued")
+          : t("qcToastSaved"),
       );
       setTitle("");
       setTopic("");
@@ -166,11 +166,11 @@ function QuizCreator() {
       .filter((r) => r.topic !== "");
 
     if (quizMode === "single" && !cleanTopic) {
-      toast.error("Add a topic first so the generator knows what to write about");
+      toast.error(t("qcNeedTopic"));
       return;
     }
     if (quizMode === "multi" && cleanRows.length === 0) {
-      toast.error("Add at least one subject row with a topic");
+      toast.error(t("qcNeedRow"));
       return;
     }
     if (isGenerating || isRegenerating) return;
@@ -210,12 +210,12 @@ function QuizCreator() {
       setRenderToken((n) => n + 1);
       toast.success(
         mode === "regenerate"
-          ? `Regenerated ${questionCount} fresh AI questions`
-          : `AI generated ${questionCount} questions`,
+          ? t("qcToastRegenerated", { count: questionCount })
+          : t("qcToastGenerated", { count: questionCount }),
       );
     } catch (e) {
       console.error("[QuizCreator] generation failed", e);
-      toast.error(e instanceof Error ? e.message : "Generation failed");
+      toast.error(e instanceof Error ? e.message : t("qcToastFailed"));
       setQuestions([emptyQuestion()]);
     } finally {
       setIsGenerating(false);
@@ -240,32 +240,32 @@ function QuizCreator() {
   const busy = isGenerating || isRegenerating;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div key={uiLang} className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle>Create a quiz</CardTitle>
-            <CardDescription>No coding needed — works offline and syncs later.</CardDescription>
+            <CardTitle>{t("qcCreateTitle")}</CardTitle>
+            <CardDescription>{t("qcCreateSub")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Quiz title</Label>
+              <Label htmlFor="title">{t("qcQuizTitle")}</Label>
               <Input
                 id="title"
-                placeholder="e.g. मंडी में जोड़-घटाव"
+                placeholder={t("qcTitlePlaceholder")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Number of Questions">
+              <Field label={t("qcNumQuestions")}>
                 <Picker
                   value={String(questionCount)}
                   onChange={(v) => setCount(Number(v))}
                   options={QUESTION_COUNTS}
                 />
               </Field>
-              <Field label="Quiz Mode">
+              <Field label={t("qcQuizMode")}>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -273,7 +273,7 @@ function QuizCreator() {
                     className="flex-1"
                     onClick={() => setQuizMode("single")}
                   >
-                    Single Subject
+                    {t("qcSingleSubject")}
                   </Button>
                   <Button
                     type="button"
@@ -281,32 +281,32 @@ function QuizCreator() {
                     className="flex-1"
                     onClick={() => setQuizMode("multi")}
                   >
-                    Multi-Subject
+                    {t("qcMultiSubject")}
                   </Button>
                 </div>
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Language">
+              <Field label={t("language")}>
                 <Picker value={language} onChange={setLanguage} options={[...LANGUAGES]} />
               </Field>
               {quizMode === "single" && (
-                <Field label="Subject">
+                <Field label={t("subjectLabel")}>
                   <Picker value={subject} onChange={setSubject} options={[...SUBJECTS]} />
                 </Field>
               )}
-              <Field label="Class">
+              <Field label={t("classLabel")}>
                 <Picker value={classLevel} onChange={setClassLevel} options={[...CLASSES]} />
               </Field>
-              <Field label="Difficulty">
+              <Field label={t("qcDifficulty")}>
                 <Picker value={difficulty} onChange={setDifficulty} options={[...DIFFICULTIES]} />
               </Field>
               {quizMode === "single" && (
-                <Field label="Topic">
-                  <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Addition & money" />
+                <Field label={t("qcTopic")}>
+                  <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={t("qcTopicPlaceholder")} />
                 </Field>
               )}
-              <Field label="Duration (minutes)">
+              <Field label={t("qcDuration")}>
                 <Input
                   type="number"
                   min={5}
@@ -318,7 +318,7 @@ function QuizCreator() {
             </div>
             {quizMode === "multi" && (
               <div className="space-y-3 rounded-lg border p-3">
-                <p className="text-sm font-medium">Subjects & topics</p>
+                <p className="text-sm font-medium">{t("qcSubjectsTopics")}</p>
                 {subjectRows.map((row, i) => (
                   <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <div className="sm:w-44">
@@ -332,7 +332,7 @@ function QuizCreator() {
                     </div>
                     <Input
                       className="flex-1"
-                      placeholder="Topic (e.g. Water Cycle)"
+                      placeholder={t("qcRowTopicPlaceholder")}
                       value={row.topic}
                       onChange={(e) =>
                         setSubjectRows((rs) =>
@@ -356,14 +356,14 @@ function QuizCreator() {
                   size="sm"
                   onClick={() => setSubjectRows((rs) => [...rs, { subject: "Science", topic: "" }])}
                 >
-                  ➕ Add Subject Row
+                  ➕ {t("qcAddSubjectRow")}
                 </Button>
               </div>
             )}
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
-                <p className="text-sm font-medium">Share with other teachers</p>
-                <p className="text-xs text-muted-foreground">Published quizzes appear in the shared library.</p>
+                <p className="text-sm font-medium">{t("qcShareTitle")}</p>
+                <p className="text-xs text-muted-foreground">{t("qcShareSub")}</p>
               </div>
               <Switch checked={published} onCheckedChange={setPublished} />
             </div>
@@ -379,7 +379,7 @@ function QuizCreator() {
                 ) : (
                   <Sparkles className="size-4" />
                 )}
-                {isGenerating ? "Generating..." : "AI Generate Quiz"}
+                {isGenerating ? t("qcGenerating") : t("qcGenerate")}
               </Button>
               <Button
                 size="lg"
@@ -393,14 +393,14 @@ function QuizCreator() {
                 ) : (
                   <RefreshCw className="size-4" />
                 )}
-                {isRegenerating ? "🔄 Regenerating fresh set..." : "🔄 Regenerate Questions"}
+                {isRegenerating ? `🔄 ${t("qcRegenerating")}` : `🔄 ${t("qcRegenerate")}`}
               </Button>
             </div>
             {busy && (
               <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/40 p-4">
                 <Loader2 className="size-5 animate-spin text-primary" />
                 <p className="text-sm font-medium">
-                  Trained AI is actively generating structured curriculum questions...
+                  {t("qcBusyNote")}
                 </p>
               </div>
             )}
@@ -410,11 +410,11 @@ function QuizCreator() {
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle>Questions</CardTitle>
-              <CardDescription>{questions.length} question(s)</CardDescription>
+              <CardTitle>{t("qcQuestions")}</CardTitle>
+              <CardDescription>{t("qcQuestionCount", { count: questions.length })}</CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={() => setQuestions((q) => [...q, emptyQuestion()])}>
-              <Plus className="size-4" /> Add
+              <Plus className="size-4" /> {t("qcAdd")}
             </Button>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -434,7 +434,7 @@ function QuizCreator() {
                   )}
                 </div>
                 <Textarea
-                  placeholder="Question text in the chosen language"
+                  placeholder={t("qcPromptPlaceholder")}
                   value={q.prompt}
                   onChange={(e) => updateQuestion(i, { prompt: e.target.value })}
                 />
@@ -450,7 +450,7 @@ function QuizCreator() {
                         aria-label={`Mark option ${oi + 1} correct`}
                       />
                       <Input
-                        placeholder={`Option ${oi + 1}`}
+                        placeholder={t("qcOption", { n: oi + 1 })}
                         value={opt}
                         onChange={(e) =>
                           updateQuestion(i, {
@@ -464,7 +464,7 @@ function QuizCreator() {
               </div>
             ))}
             <Button className="w-full" disabled={!valid || save.isPending} onClick={() => save.mutate()}>
-              {online ? "Save Quiz" : "Save offline & queue for sync"}
+              {online ? t("qcSave") : t("qcSaveOffline")}
             </Button>
           </CardContent>
         </Card>
@@ -472,21 +472,21 @@ function QuizCreator() {
 
       <Card className="h-fit">
         <CardHeader>
-          <CardTitle>My quizzes</CardTitle>
-          <CardDescription>Created by you</CardDescription>
+          <CardTitle>{t("qcMyQuizzes")}</CardTitle>
+          <CardDescription>{t("qcCreatedByYou")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {(myQuizzes.data ?? []).length === 0 && (
-            <p className="text-sm text-muted-foreground">No quizzes yet — your first one appears here.</p>
+            <p className="text-sm text-muted-foreground">{t("qcNoQuizzes")}</p>
           )}
           {(myQuizzes.data ?? []).map((q) => (
             <div key={q.id} className="rounded-lg border p-3">
               <p className="font-medium">{q.title}</p>
               <p className="text-xs text-muted-foreground">
-                {q.language} · {q.class_level} · {Array.isArray(q.questions) ? q.questions.length : 0} questions
+                {q.language} · {q.class_level} · {Array.isArray(q.questions) ? q.questions.length : 0} {t("qcQuestionsSuffix")}
               </p>
               <Badge variant={q.is_published ? "default" : "secondary"} className="mt-2">
-                {q.is_published ? "Shared" : "Private"}
+                {q.is_published ? t("qcShared") : t("qcPrivate")}
               </Badge>
             </div>
           ))}

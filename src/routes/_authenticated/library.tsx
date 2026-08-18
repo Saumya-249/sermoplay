@@ -42,10 +42,11 @@ export const Route = createFileRoute("/_authenticated/library")({
 const ALL = "all";
 
 function LibraryPage() {
-  const { online } = useApp();
+  const { online, registeredClass, classLocked } = useApp();
   const [language, setLanguage] = useState<string>(ALL);
   const [subject, setSubject] = useState<string>(ALL);
   const [classLevel, setClassLevel] = useState<string>(ALL);
+  const lockedClass = classLocked ? registeredClass : null;
   const [search, setSearch] = useState("");
 
   const games = WORKING_GAME_LIBRARY;
@@ -68,27 +69,34 @@ function LibraryPage() {
     return games.filter((g) => {
       if (language !== ALL && g.language !== language) return false;
       if (subject !== ALL && g.subject !== subject) return false;
+      if (lockedClass && g.classLevel !== lockedClass) return false;
       if (classLevel !== ALL && g.classLevel !== classLevel) return false;
       if (search && !`${g.title} ${g.topic}`.toLowerCase().includes(search.toLowerCase()))
         return false;
       return true;
     });
-  }, [games, language, subject, classLevel, search]);
+  }, [games, language, subject, classLevel, search, lockedClass]);
 
   const filteredQuizzes = useMemo(() => {
     return (quizzes.data ?? []).filter((q) => {
       if (language !== ALL && q.language !== language) return false;
       if (subject !== ALL && q.subject !== subject) return false;
+      if (lockedClass && q.class_level !== lockedClass) return false;
       if (classLevel !== ALL && q.class_level !== classLevel) return false;
       if (search && !`${q.title} ${q.topic ?? ""}`.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [quizzes.data, language, subject, classLevel, search]);
+  }, [quizzes.data, language, subject, classLevel, search, lockedClass]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Game library</h1>
+        {lockedClass && (
+          <p className="mt-1 inline-block rounded-md bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">
+            🔒 Showing only {lockedClass} content — your registered grade level.
+          </p>
+        )}
         <p className="text-sm text-muted-foreground">
           {filtered.length} of {games.length} playable games match your filters.
         </p>

@@ -514,7 +514,7 @@ function MapDetective({ hi }: { hi: boolean }) {
   const q = MAP_QUESTIONS[idx]!;
 
   function pick(i: number) {
-    if (i === q.answer) {
+    if (i === q.correct) {
       playRewardSound();
       setScore((s) => s + 1);
       setFeedback("ok");
@@ -581,7 +581,7 @@ const SPRINT_TOPICS = [
   { key: "Percentages", subject: "Math", classLevel: "Class 8" },
 ] as const;
 
-type SprintQuestion = { prompt_en: string; prompt_hi: string; options_en: string[]; options_hi: string[]; answer: number };
+type SprintQuestion = { q: string; options: string[]; correct: number };
 
 function AiLogicSprint({ hi }: { hi: boolean }) {
   const generate = useServerFn(generateLiveQuiz);
@@ -623,7 +623,7 @@ function AiLogicSprint({ hi }: { hi: boolean }) {
           rows: [],
         },
       });
-      const list = (res.questions ?? []) as SprintQuestion[];
+      const list: SprintQuestion[] = res.questions ?? [];
       if (list.length === 0) throw new Error("empty");
       setQuestions(list);
       setRunning(false);
@@ -640,7 +640,7 @@ function AiLogicSprint({ hi }: { hi: boolean }) {
   function pick(i: number) {
     if (picked !== null || !q) return;
     setPicked(i);
-    if (i === q.answer) {
+    if (i === q.correct) {
       playRewardSound();
       setScore((s) => s + 1);
     }
@@ -701,12 +701,12 @@ function AiLogicSprint({ hi }: { hi: boolean }) {
               <p className="text-xs text-muted-foreground">
                 {hi ? "प्रश्न" : "Question"} {idx + 1}/{questions.length}
               </p>
-              <p className="text-lg font-semibold">{hi ? q.prompt_hi || q.prompt_en : q.prompt_en}</p>
+              <p className="text-lg font-semibold">{q.q}</p>
               <div className="grid gap-2 sm:grid-cols-2">
-                {(hi ? q.options_hi?.length ? q.options_hi : q.options_en : q.options_en).map((opt, i) => (
+                {q.options.map((opt, i) => (
                   <Button
                     key={`${opt}-${i}`}
-                    variant={picked === i ? (i === q.answer ? "default" : "destructive") : "outline"}
+                    variant={picked === i ? (i === q.correct ? "default" : "destructive") : "outline"}
                     className="h-auto justify-start whitespace-normal py-3 text-left"
                     onClick={() => pick(i)}
                   >
@@ -725,7 +725,13 @@ function AiLogicSprint({ hi }: { hi: boolean }) {
           )}
         </div>
       </GameShell>
-      <CelebrationSplash show={done && score > 0} label={`${score} ${hi ? "सही" : "correct"}`} />
+      <CelebrationSplash
+        open={done && score > 0}
+        title={hi ? "🎉 शानदार!" : "🎉 Great sprint!"}
+        subtitle={`${score} ${hi ? "सही उत्तर" : "correct answers"}`}
+        actionLabel={hi ? "फिर से खेलें" : "Play again"}
+        onAction={() => void start()}
+      />
     </>
   );
 }

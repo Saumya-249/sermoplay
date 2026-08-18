@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { canAccess } from "@/lib/roles";
 import { localizeGameText } from "@/lib/game-i18n";
 import { WORKING_GAME_LIBRARY } from "@/lib/working-games";
+import { AdminAnalyticsBody } from "@/components/admin-analytics";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   }),
   component: Dashboard,
 });
+
 
 function Dashboard() {
   const { userId, online, role, guest } = useApp();
